@@ -40,16 +40,11 @@ void exitGame()
 int main(int argc,char *argv[])
 {
     //local variables
-<<<<<<< HEAD
-    Sprite *bg;
-    int done = 0;
-=======
     Mesh *mesh;
     Texture *texture;
     float theta = 0;
     GFC_Vector3D cam = {0,50,0};
     GFC_Matrix4 id,dinoM;
->>>>>>> upstream/sep2525
     //initializtion    
     parse_arguments(argc,argv);
     init_logger("gf3d.log",0);
