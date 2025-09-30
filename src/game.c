@@ -39,6 +39,7 @@ int main(int argc,char *argv[])
 {
     //local variables
     Sprite *bg;
+    int done = 0;
     //initializtion    
     parse_arguments(argc,argv);
     init_logger("gf3d.log",0);
