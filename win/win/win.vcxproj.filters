@@ -326,5 +326,8 @@
     <ClCompile Include="..\..\gfc\simple_json\src\simple_json_string.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\gf3d_mesh.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
