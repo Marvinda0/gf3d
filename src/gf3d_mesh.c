@@ -21,20 +21,16 @@ extern int __DEBUG;
 typedef struct
 {
 	Mesh*								mesh_list;
-	Unit32								mesh_count;
-	Unit32								chain_length;			// length of swap chain
+	Uint32								mesh_count;
+	Uint32								chain_length;			// length of swap chain
 	VkDevice							device;					//logical vulakn device handle
 	Pipeline							*pipeline;				//the pipeline to use for rendering meshes
-	VkVertexInutAttributeDescription	*attributeDescriptions[MESH_ATTRIBUTE_COUNT];	//how the vertex is laid out
+	VkVertexInputAttributeDescription	*attributeDescriptions[MESH_ATTRIBUTE_COUNT];	//how the vertex is laid out
 	VkVertexInputBindingDescription		bindingDescription;		//how the vertex is described
 	Texture 							*defaultTexture;		//a default texture to use when none is specified
 }MeshManager;
 
 static MeshManager gf3d_mesh_manager = {0};
-
-MeshUBO gf3d_mesh_get_ubo(
-	GFC_Matrix4 modelMat,
-	GFC_Color colorMod);
 	
 //foward declarations of local functions
 void gf3d_mesh_delete(Mesh* mesh);
@@ -43,26 +39,14 @@ VkVertexInputBindingDescription * gf3d_mesh_manager_get_bind_description();
 void gf3d_mesh_primitive_create_vertex_buffer_from_vertices(MeshPrimitive *prim);
 void gf3d_mesh_setup_face_buffer(MeshPrimitive *prim);
 
-Mesh *gf3d_mesh_new()
+void gf3d_mesh_init(Uint32mesh_max) 
 {
-	Mesh *mesh;
-	if (!gf3d_mesh_manager.device)
+	if (Uint32mesh_max == 0)
 	{
-		slog("cannot create mesh before gf3d_mesh_init has been called");
-		return NULL;
+		slog("cannot intilizat mesh manager for 0 meshes, must be greater than 0");
+		return;
 	}
-	mesh = (Mesh*)gfc_allocate_array(sizeof(Mesh),1);
-	if (!mesh)
-	{
-		slog("failed to allocate mesh");
-		return NULL;
-	}
-	mesh->refCount = 1;// start with a ref count of 1
-	mesh->primitiveList = NULL;//no primitives yet
-	mesh->primitiveCount = 0;// no primitives yet
-	mesh->modelMatrix = gfc_matrix4_identity();//start with identity matrix
-	mesh->color = gfc_color8(255,255,255,255); //default to white
-	return mesh;
+
 }
 
 void gf3d_mesh_manager_close()
