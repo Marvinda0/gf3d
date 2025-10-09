@@ -329,5 +329,8 @@
     <ClCompile Include="..\..\src\gf3d_mesh.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\gf3d_camera.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

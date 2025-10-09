@@ -231,6 +231,7 @@
     <ClCompile Include="..\..\src\gf2d_mouse.c" />
     <ClCompile Include="..\..\src\gf2d_sprite.c" />
     <ClCompile Include="..\..\src\gf3d_buffers.c" />
+    <ClCompile Include="..\..\src\gf3d_camera.c" />
     <ClCompile Include="..\..\src\gf3d_commands.c" />
     <ClCompile Include="..\..\src\gf3d_config.c" />
     <ClCompile Include="..\..\src\gf3d_debug.c" />

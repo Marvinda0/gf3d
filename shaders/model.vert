@@ -2,30 +2,37 @@
 #extension GL_ARB_separate_shader_objects : enable
 
 layout(binding = 0) uniform MeshUBO {
-    mat4 model;     
-    mat4 view;       
-    mat4 proj;       
-    vec4 color;      
-    vec4 cameraPos;  
+    mat4 model;
+    mat4 view;
+    mat4 proj;
+    vec4 color;
+    vec4 cameraPos;
 } ubo;
 
-//out gl_PerVertex
-//{
-//   vec4 gl_Position;
-//};
+out gl_PerVertex
+{
+   vec4 gl_Position;
+};
 
 layout(location = 0) in vec3 inPosition;   
 layout(location = 1) in vec3 inNormal;     
 layout(location = 2) in vec2 inTexCoord;   
 
 layout(location = 0) out vec2 fragTexCoord;
-// layout(location = 1) out vec4 colorMod;
-//layout(location = 2) out vec3 fragNormal;
-//layout(location = 3) out vec3 fragPos;
+layout(location = 1) out vec3 outnormal;
+layout(location = 2) out vec4 colorMod;
+layout(location = 3) out vec4 worldPosition;
+layout(location = 4) out vec4 cameraPos;
 
 void main()
 {      
+	mat3 normalMatrix;
+    mat4 mvp = ubo.proj * ubo.view * ubo.model;
+    gl_Position = mvp * vec4(inPosition, 1.0);
+    normalMatrix = transpose(inverse(mat3(ubo.model)));
+    outnormal = normalize(inNormal * normalMatrix);
+    colorMod = ubo.color;
+    cameraPos = ubo.cameraPos;
+    worldPosition = vec4(inPosition, 1.0);
     fragTexCoord = inTexCoord;
-    gl_Position = ubo.proj * ubo.view * ubo.model * vec4(inPosition, 1.0);
-    //colorMod = ubo.colorMod;
 }

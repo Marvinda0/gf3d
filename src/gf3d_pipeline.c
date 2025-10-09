@@ -184,6 +184,12 @@ void gf3d_pipeline_queue_render(
     void *uboData,
     Texture *texture)
 {
+    if (!pipe) { slog("queue_render: pipe=NULL"); return; }
+    if (!uboData) { slog("queue_render: bad UBO"); return; }
+    if (!vertexBuffer) { slog("queue_render: vertexBuffer NULL"); return; }
+    if (!indexBuffer) { slog("queue_render: indexBuffer NULL"); return; }
+    if (!texture) { slog("queue_render: texture NULL, using default?"); }
+
     PipelineDrawCall *drawCall;
     if (!pipe)return;
     drawCall = gf3d_pipeline_draw_call_new(pipe);
@@ -197,6 +203,10 @@ void gf3d_pipeline_queue_render(
     drawCall->vertexCount = vertexCount;
     drawCall->indexBuffer = indexBuffer;
     drawCall->texture = texture;
+    if (!drawCall->uboData) {
+        slog("ERROR: drawCall->uboData is NULL! pipeline uboData unallocated");
+        return;
+    }
     memcpy(drawCall->uboData,uboData,pipe->uboDataSize);
 }
 
@@ -401,6 +411,10 @@ Pipeline *gf3d_pipeline_create_from_config(
     VkPipelineColorBlendStateCreateInfo colorBlending = {0};
     VkPipelineDepthStencilStateCreateInfo depthStencil = {0};
     
+    if (descriptorCount == 0) {
+    slog("ERROR: descriptorCount is 0! Check swapchain length.");
+    return NULL;
+}
     if (!vertexInputDescription)
     {
         slog("must provide vertexInputDescription to create the pipeline");

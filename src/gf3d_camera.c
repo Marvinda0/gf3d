@@ -8,11 +8,6 @@ static Camera gf3d_camera = {0};
 
 void gf3d_camera_update_view()
 {
-    /**
-     * Adapted from tutorial:
-     * https://www.3dgep.com/understanding-the-view-matrix/
-     */
-    
     GFC_Vector3D xaxis,yaxis,zaxis,position;
     float cosPitch = cos(gf3d_camera.rotation.x);
     float sinPitch = sin(gf3d_camera.rotation.x);
