@@ -53,10 +53,14 @@ int main(int argc,char *argv[])
     gfc_input_init("config/input.cfg");
     gfc_config_def_init();
     gfc_action_init(1024);
+    slog("Passed input");
     //gf3d init
     gf3d_vgraphics_init("config/setup.cfg");
+    slog("Passed ginit");
     gf2d_font_init("config/font.cfg");
+    slog("Passed finit");
     gf2d_actor_init(1000);
+    slog("Passed 3");
     
     //game init
     srand(SDL_GetTicks());
