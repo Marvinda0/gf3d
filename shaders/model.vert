@@ -30,9 +30,9 @@ void main()
     mat4 mvp = ubo.proj * ubo.view * ubo.model;
     gl_Position = mvp * vec4(inPosition, 1.0);
     normalMatrix = transpose(inverse(mat3(ubo.model)));
-    outnormal = normalize(inNormal * normalMatrix);
+    outnormal = normalize(normalMatrix * inNormal);
     colorMod = ubo.color;
     cameraPos = ubo.cameraPos;
-    worldPosition = vec4(inPosition, 1.0);
+    worldPosition = ubo.model * vec4(inPosition, 1.0);
     fragTexCoord = inTexCoord;
 }

@@ -89,6 +89,7 @@ VkVertexInputAttributeDescription* gf3d_mesh_get_attribute_descriptions(Uint32* 
 	attributeDescriptions[2].offset = offsetof(Vertex, texel);
 
 	if (count)*count = MESH_ATTRIBUTE_COUNT;
+	memcpy(mesh_manager.attributeDescriptions, attributeDescriptions, sizeof(attributeDescriptions));
 	return mesh_manager.attributeDescriptions;
 }
 
@@ -100,7 +101,7 @@ VkVertexInputBindingDescription * gf3d_mesh_manager_get_bind_description()
 	bindingDescription.stride = sizeof(Vertex);
 	bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-	return &mesh_manager.bindingDescription;
+	return &bindingDescription;;
 }
 
 void gf3d_mesh_init(Uint32 mesh_max) 
@@ -265,6 +266,8 @@ Mesh* gf3d_mesh_load(const char* filename)
 
 	slog("mesh_load: calling obj_load: %s", filename); slog_sync();
 	obj = gf3d_obj_load_from_file(filename);
+	slog("OBJ load result: vertexCount=%d faceCount=%d",
+		obj->vertex_count, obj->face_count);
 	if (!obj)
 	{
 		slog("Failed to load OBJ: %s", filename);

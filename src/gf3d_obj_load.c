@@ -179,6 +179,8 @@ ObjData* gf3d_obj_load_from_file(const char* filename)
     // 3) Count geometry
     slog("calling gf3d_obj_get_counts_from_file()..."); slog_sync();
     gf3d_obj_get_counts_from_file(obj, mem, fileSize);
+    slog("OBJ counts -> verts:%d tex:%d norms:%d faces:%d",
+        obj->vertex_count, obj->texel_count, obj->normal_count, obj->face_count);
     slog("counts: v=%u vt=%u vn=%u f=%u",
         obj->vertex_count, obj->texel_count, obj->normal_count, obj->face_count);
     slog_sync();

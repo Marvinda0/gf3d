@@ -181,11 +181,13 @@ void gf3d_vgraphics_init(const char *config)
         enableDebug,
         config
         );
+    VkDevice tmp = gf3d_vgraphics_get_default_logical_device();
+    slog("device handle from get_default_logical_device: %p", tmp);
     slog("gf3d vgraphics 12.9  (returned from setup)");
-    slog_sync();
     slog("gf3d vgraphics 13");
     gf3d_vgraphics.device = gf3d_vgraphics_get_default_logical_device();
     slog("gf3d vgraphics 14");
+;
     gf3d_vqueues_setup_device_queues(gf3d_vgraphics.device);
     // swap chain!!!
     gf3d_swapchain_init(gf3d_vgraphics.gpu,gf3d_vgraphics.device,gf3d_vgraphics.surface,resolution.x,resolution.y);
@@ -386,9 +388,7 @@ void gf3d_vgraphics_setup(
         exit(0);
     }
     slog("setup 19");
-    slog_sync();
     slog("setup END");
-    slog_sync();
 }
 
 void gf3d_vgraphics_close()

@@ -55,6 +55,7 @@ void gf3d_device_manager_close()
 
 void gf3d_device_manager_init(const char *config, VkInstance instance, VkSurfaceKHR renderSurface)
 {
+    slog("device_man_init 1");
     SJson *deviceConfig;
     short int enable_validation = false;
     if (!instance)
@@ -63,18 +64,20 @@ void gf3d_device_manager_init(const char *config, VkInstance instance, VkSurface
         return;
     }
     gf3d_device_manager.instance = instance;
+    slog("device_man_init 2");
     if (!config)
     {
         slog("no config file provided");
         return;
     }
     gf3d_device_manager.config = gfc_pak_load_json(config);
+    slog("device_man_init 3");
     if (!gf3d_device_manager.config)
     {
         slog("failed to load device config file: %s",config);
         return;
     }
-    
+    slog("device_man_init 4");
     if (!gf3d_devices_enumerate())
     {
         slog("failed to enumerate devices");
@@ -82,8 +85,11 @@ void gf3d_device_manager_init(const char *config, VkInstance instance, VkSurface
         return;
     }
     gf3d_device_manager.renderSurface = renderSurface;
+    slog("device_man_init 5");
     gf3d_device_manager.bestDevice = -1;
+    slog("device_man_init 6");
     gf3d_device_manager_determine_best();
+    slog("device_man_init 7");
     
     if (!gf3d_device_manager.chosen_gpu)
     {
@@ -97,12 +103,14 @@ void gf3d_device_manager_init(const char *config, VkInstance instance, VkSurface
     }
     
     gf3d_vqueues_init(gf3d_device_manager.chosen_gpu->device,gf3d_device_manager.renderSurface);
+    slog("device_man_init 8");
     
     //setup device extensions
     gf3d_extensions_device_init(gf3d_device_manager.chosen_gpu->device,config);
+    slog("device_man_init 9");
 
     gf3d_device_create_logic_device(enable_validation);
-    
+    slog("device_man_init 10");
     atexit(gf3d_device_manager_close);
     if (__DEBUG)slog("gf3d_devices manager initialized");
 }
