@@ -24,8 +24,8 @@ typedef struct
     GFC_Matrix4     proj;
     GFC_Vector4D    color;
     GFC_Vector4D    camera;
-    //GFC_Vector4D    lightPos;
-    //GFC_Vector4D    lightColor;
+    GFC_Vector4D    lightPos;
+    GFC_Vector4D    lightColor;
 }MeshUBO;
 
 typedef struct

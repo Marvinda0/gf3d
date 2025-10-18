@@ -35,8 +35,6 @@ typedef struct
 
 static MeshManager mesh_manager = {0};
 	
-//foward declarations of local functions
-void gf3d_mesh_delete(Mesh* mesh);
 VkVertexInputAttributeDescription * gf3d_mesh_get_attribute_descriptions(Uint32 *count);
 VkVertexInputBindingDescription* gf3d_mesh_manager_get_bind_description();
 void gf3d_mesh_primitive_create_vertex_buffers(MeshPrimitive *prim);
@@ -238,7 +236,7 @@ void gf3d_mesh_manager_close()
 	{
 		for (i = 0; i < mesh_manager.mesh_count; i++)
 		{
-			gf3d_mesh_delete(&mesh_manager.mesh_list[i]);
+			gf3d_mesh_free(&mesh_manager.mesh_list[i]);
 		}
 		free(mesh_manager.mesh_list);
 	}
@@ -250,6 +248,7 @@ void gf3d_mesh_manager_close()
 	{
 		gf3d_texture_free(mesh_manager.defaultTexture);
 	}
+	
 	memset(&mesh_manager,0,sizeof(MeshManager));
 }
 
@@ -266,13 +265,13 @@ Mesh* gf3d_mesh_load(const char* filename)
 
 	slog("mesh_load: calling obj_load: %s", filename); slog_sync();
 	obj = gf3d_obj_load_from_file(filename);
-	slog("OBJ load result: vertexCount=%d faceCount=%d",
-		obj->vertex_count, obj->face_count);
 	if (!obj)
 	{
 		slog("Failed to load OBJ: %s", filename);
 		return NULL;
 	}
+	slog("OBJ load result: vertexCount=%d faceCount=%d",
+		obj->vertex_count, obj->face_count);
 
 	mesh = gf3d_mesh_new();
 	if (!mesh)
@@ -338,7 +337,7 @@ void gf3d_mesh_queue_render(Mesh* mesh, Pipeline* pipe, void* uboData, Texture* 
 	}
 }
 
-void gf3d_mesh_draw(Mesh *mesh, GFC_Matrix4 modelMat, GFC_Color mod, Texture *texture)
+void gf3d_mesh_draw(Mesh *mesh, GFC_Matrix4 modelMat, GFC_Color mod, Texture *texture, GFC_Vector3D lightPos, GFC_Color lightColor)
 {
 	MeshUBO ubo = { 0 };
 
@@ -347,9 +346,12 @@ void gf3d_mesh_draw(Mesh *mesh, GFC_Matrix4 modelMat, GFC_Color mod, Texture *te
 	gf3d_vgraphics_get_projection_matrix(&ubo.proj);
 
 	ubo.color = gfc_color_to_vector4f(mod);
-	//ubo.lightColor = gfc_color_to_vector4f(lightColor);
-	//ubo.lightPos = gfc_vector3dw(lightPos, 1.0);
+	ubo.lightColor = gfc_color_to_vector4f(lightColor);
+	ubo.lightPos = gfc_vector3dw(lightPos, 1.0);
 	ubo.camera = gfc_vector3dw(gf3d_camera_get_position(), 1.0);
+	slog("LightPos: %.2f %.2f %.2f  Color: %.2f %.2f %.2f",
+		ubo.lightPos.x, ubo.lightPos.y, ubo.lightPos.z,
+		ubo.lightColor.x, ubo.lightColor.y, ubo.lightColor.z);
 	gf3d_mesh_queue_render(mesh, mesh_manager.pipeline, &ubo, texture);
 }
 
@@ -358,7 +360,34 @@ Pipeline* gf3d_mesh_get_pipeline()
 	return mesh_manager.pipeline;	
 }
 
-static void gf3d_mesh_delete(Mesh* mesh)
+void gf3d_mesh_primitive_free(MeshPrimitive* prim)
+{
+	if (!prim) return;
+	gf3d_obj_free(prim->objData);
+	if (prim->faceBuffer != VK_NULL_HANDLE)
+	{
+		vkDestroyBuffer(gf3d_vgraphics_get_default_logical_device(), prim->faceBuffer, NULL);
+		prim->faceBuffer = VK_NULL_HANDLE;
+	}
+	if (prim->faceBufferMemory != VK_NULL_HANDLE)
+	{
+		vkFreeMemory(gf3d_vgraphics_get_default_logical_device(), prim->faceBufferMemory, NULL);
+		prim->faceBufferMemory = VK_NULL_HANDLE;
+	}
+	if (prim->vertexBuffer != VK_NULL_HANDLE)
+	{
+		vkDestroyBuffer(gf3d_vgraphics_get_default_logical_device(), prim->vertexBuffer, NULL);
+		prim->vertexBuffer = VK_NULL_HANDLE;
+	}
+	if (prim->vertexBufferMemory != VK_NULL_HANDLE)
+	{
+		vkFreeMemory(gf3d_vgraphics_get_default_logical_device(), prim->vertexBufferMemory, NULL);
+		prim->vertexBufferMemory = VK_NULL_HANDLE;
+	}
+	free(prim);
+}
+
+void gf3d_mesh_free(Mesh* mesh)
 {
 	if (!mesh || mesh->_refCount == 0) return;
 
@@ -377,8 +406,7 @@ static void gf3d_mesh_delete(Mesh* mesh)
 			if (p->faceBuffer)      vkDestroyBuffer(device, p->faceBuffer, NULL);
 			if (p->faceBufferMemory)   vkFreeMemory(device, p->faceBufferMemory, NULL);
 
-			// if ObjData ownership belongs here, free it; otherwise omit:
-			// gf3d_obj_free(p->objData);
+			if (p->objData) gf3d_obj_free(p->objData);
 
 			free(p);
 		}
@@ -387,6 +415,7 @@ static void gf3d_mesh_delete(Mesh* mesh)
 
 	memset(mesh, 0, sizeof(*mesh));
 }
+
 
 
 

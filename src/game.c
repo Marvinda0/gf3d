@@ -43,6 +43,8 @@ int main(int argc,char *argv[])
     Mesh *mesh;
     Texture *texture;
     float theta = 0;
+    GFC_Vector3D lightPos = {0,50,0};
+    GFC_Color lightColor = {1,1,1,1};
     GFC_Vector3D cam = {0,50,0};
     GFC_Matrix4 id,dinoM;
     //initializtion    
@@ -84,7 +86,7 @@ int main(int argc,char *argv[])
         gf3d_camera_update_view();
         gf3d_vgraphics_render_start();
                 //3D draws
-                gf3d_mesh_draw(mesh,dinoM,GFC_COLOR_WHITE,texture);
+                gf3d_mesh_draw(mesh,dinoM,GFC_COLOR_WHITE,texture, lightPos, lightColor);
                 //2D draws
                 gf2d_font_draw_line_tag("ALT+F4 to exit",FT_H1,GFC_COLOR_WHITE, gfc_vector2d(10,10));
                 gf2d_mouse_draw();
@@ -94,6 +96,8 @@ int main(int argc,char *argv[])
     }    
     vkDeviceWaitIdle(gf3d_vgraphics_get_default_logical_device());    
     //cleanup
+    gf3d_mesh_free(mesh);
+    gf3d_texture_free(texture);
     slog("gf3d program end");
     exit(0);
     slog_sync();
