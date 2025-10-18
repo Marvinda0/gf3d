@@ -1,4 +1,4 @@
-#include "simple_json.h"
+/*#include "simple_json.h"
 #include "simple_logger.h"
 #include "world.h"
 #include "entity.h"
@@ -53,3 +53,4 @@ void world_draw(World *world) {
 
 
 }
+*/
