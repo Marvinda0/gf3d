@@ -1,0 +1,9 @@
+{
+	"world":
+	{
+		"terrainMesh": path to file"",
+		"TerrainTexture":"",]
+		"lighColor":[],
+		"lightPos":[] 
+	}
+}

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -182,6 +182,7 @@
     <ClInclude Include="..\..\include\gf3d_config.h" />
     <ClInclude Include="..\..\include\gf3d_debug.h" />
     <ClInclude Include="..\..\include\gf3d_device.h" />
+    <ClInclude Include="..\..\include\gf3d_entity.h" />
     <ClInclude Include="..\..\include\gf3d_extensions.h" />
     <ClInclude Include="..\..\include\gf3d_gltf_parse.h" />
     <ClInclude Include="..\..\include\gf3d_mesh.h" />
@@ -194,6 +195,8 @@
     <ClInclude Include="..\..\include\gf3d_validation.h" />
     <ClInclude Include="..\..\include\gf3d_vgraphics.h" />
     <ClInclude Include="..\..\include\gf3d_vqueues.h" />
+    <ClInclude Include="..\..\include\world.h" />
+    <ClInclude Include="Header.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\gfc\simple_json\src\simple_json.c" />
@@ -236,6 +239,7 @@
     <ClCompile Include="..\..\src\gf3d_config.c" />
     <ClCompile Include="..\..\src\gf3d_debug.c" />
     <ClCompile Include="..\..\src\gf3d_device.c" />
+    <ClCompile Include="..\..\src\gf3d_entity.c" />
     <ClCompile Include="..\..\src\gf3d_extensions.c" />
     <ClCompile Include="..\..\src\gf3d_gltf_parse.c" />
     <ClCompile Include="..\..\src\gf3d_mesh.c" />
@@ -248,6 +252,7 @@
     <ClCompile Include="..\..\src\gf3d_validation.c" />
     <ClCompile Include="..\..\src\gf3d_vgraphics.c" />
     <ClCompile Include="..\..\src\gf3d_vqueues.c" />
+    <ClCompile Include="..\..\src\world.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
