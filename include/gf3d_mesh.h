@@ -89,7 +89,7 @@ Mesh *gf3d_mesh_load(const char *filename);
  * @param lightPos the position of the light to use for this draw
  * @param lightColor the color of the light to use for this draw
  */
-void gf3d_mesh_draw(Mesh *mesh,GFC_Matrix4 modelMat,GFC_Color mod,Texture *texture);
+void gf3d_mesh_draw(Mesh *mesh,GFC_Matrix4 modelMat,GFC_Color mod,Texture *texture, GFC_Vector3D lightPos, GFC_Color lightColor);
 
 /**
  * @brief allocate a zero initialized mesh primitive
