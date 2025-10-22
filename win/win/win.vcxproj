@@ -171,6 +171,7 @@
     <ClInclude Include="..\..\gfc\simple_json\include\simple_json_types.h" />
     <ClInclude Include="..\..\gfc\simple_json\include\simple_json_value.h" />
     <ClInclude Include="..\..\gfc\simple_logger\include\simple_logger.h" />
+    <ClInclude Include="..\..\include\camera_entity.h" />
     <ClInclude Include="..\..\include\gf2d_actor.h" />
     <ClInclude Include="..\..\include\gf2d_camera.h" />
     <ClInclude Include="..\..\include\gf2d_font.h" />
@@ -227,6 +228,7 @@
     <ClCompile Include="..\..\gfc\src\gfc_types.c" />
     <ClCompile Include="..\..\gfc\src\gfc_vector.c" />
     <ClCompile Include="..\..\gfc\src\miniz.c" />
+    <ClCompile Include="..\..\src\camera_entity.c" />
     <ClCompile Include="..\..\src\game.c" />
     <ClCompile Include="..\..\src\gf2d_actor.c" />
     <ClCompile Include="..\..\src\gf2d_camera.c" />

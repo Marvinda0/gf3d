@@ -21,6 +21,8 @@
 #include "gf3d_swapchain.h"
 #include "gf3d_camera.h"
 #include "gf3d_mesh.h"
+#include "gf3d_entity.h"
+#include "monster.h"
 
 extern int __DEBUG;
 
@@ -61,32 +63,33 @@ int main(int argc,char *argv[])
     slog("Passed ginit");
     gf2d_font_init("config/font.cfg");
     slog("Passed finit");
-    gf2d_actor_init(1000);
+    gf2d_actor_init(100);
     slog("Passed 3");
+    //entity system init
+    entity_system_init(1000);
     
     //game init
     srand(SDL_GetTicks());
     slog_sync();
     gf2d_mouse_load("actors/mouse.actor");
     // main game loop    
-    mesh = gf3d_mesh_load("models/dino/dino.obj");
-    texture = gf3d_texture_load("models/dino/dino.png");
     gfc_matrix4_identity(id);
-    
+
+    Entity* monster = monster_spawn(gfc_vector3d(0, 0, 0), GFC_COLOR_WHITE);
     gf3d_camera_look_at(gfc_vector3d(0,0,0),&cam);
     while(!_done)
     {
         gfc_input_update();
         gf2d_mouse_update();
         gf2d_font_update();
-        //world updates
-        theta += 0.1;
-        gfc_matrix4_rotate_z(dinoM,id,theta);
+        //entity updates
+        entity_think_all();
+        entity_update_all();
         //camera updaes
         gf3d_camera_update_view();
         gf3d_vgraphics_render_start();
                 //3D draws
-                gf3d_mesh_draw(mesh,dinoM,GFC_COLOR_WHITE,texture, lightPos, lightColor);
+                entity_draw_all(gfc_vector3d(0,50,0), GFC_COLOR_WHITE);
                 //2D draws
                 gf2d_font_draw_line_tag("ALT+F4 to exit",FT_H1,GFC_COLOR_WHITE, gfc_vector2d(10,10));
                 gf2d_mouse_draw();
@@ -96,8 +99,6 @@ int main(int argc,char *argv[])
     }    
     vkDeviceWaitIdle(gf3d_vgraphics_get_default_logical_device());    
     //cleanup
-    gf3d_mesh_free(mesh);
-    gf3d_texture_free(texture);
     slog("gf3d program end");
     exit(0);
     slog_sync();

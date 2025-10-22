@@ -29,18 +29,22 @@ Entity* entity_new()
 			return &entity_system.entity_list[i];
 		}
 	}
-	slog("no free entities");
+	slog("no entity list");
 	return NULL;
 }
 
-void entity_free(Entity *ent)
+void entity_free(Entity * self)
 {
-	if (!ent)
+	if (!self) return;
+	if (self->free) self->free(self);
+
+	gf3d_mesh_free(self->mesh);
+	if (!self)
 	{
 		slog("cannot free a NULL entity");
 		return;
 	}
-	memset(ent, 0, sizeof(Entity));
+	memset(self, 0, sizeof(Entity));
 }
 
 void entity_system_init(Uint8 max_entities)
@@ -76,22 +80,62 @@ void entity_system_close()
 		free(entity_system.entity_list);
 	}
 	memset(&entity_system, 0, sizeof(EntitySystem));
+	slog("entity system closed");
 }
 
-void entity_draw(Entity* ent, GFC_Vector3D lightPos, GFC_Color colorMod)
+void entity_draw(Entity* self, GFC_Vector3D lightPos, GFC_Color colorMod)
 {
 	GFC_Matrix4 modelMat;
-	if (!ent) return;
-	gfc_matrix4_from_vectors(modelMat, ent->position, ent->rotation, ent->scale);
+	if (!self) return;
+	gfc_matrix4_from_vectors(modelMat, self->position, self->rotation, self->scale);
 	gf3d_mesh_draw
 	(
-		ent->mesh,
+		self->mesh,
 		modelMat,
-		ent->color,
-		ent->texture,
+		self->color,
+		self->texture,
 		lightPos,
 		colorMod);
 
+}
+
+void entity_draw_all() {
+	int i;
+	for (i = 0; i < entity_system.entity_max; i++) {
+		if (!entity_system.entity_list[i]._inuse) continue;
+		entity_draw(&entity_system.entity_list[i], gfc_vector3d(0, 50, 0), GFC_COLOR_WHITE);
+		
+	}
+}
+
+void entity_think(Entity* self) {
+	if (!self) return;
+	if (self->think) {
+		self->think(self);
+	}
+}
+
+void entity_think_all() {	
+	int i;
+	for (i = 0; i < entity_system.entity_max; i++) {
+		if (!entity_system.entity_list[i]._inuse) continue;
+		entity_think(&entity_system.entity_list[i]);
+	}
+}
+
+void entity_update(Entity* self) {
+	if (!self) return;
+	if (self->update) {
+		self->update(self);
+	}
+}
+
+void entity_update_all() {
+	int i;
+	for (i = 0; i < entity_system.entity_max; i++) {
+		if (!entity_system.entity_list[i]._inuse) continue;
+		entity_update(&entity_system.entity_list[i]);
+	}
 }
 
 
