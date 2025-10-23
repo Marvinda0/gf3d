@@ -28,6 +28,7 @@ typedef struct
 	Uint32								chain_length;			// length of swap chain
 	VkDevice							device;					//logical vulakn device handle
 	Pipeline							*pipeline;				//the pipeline to use for rendering meshes
+	Pipeline							*Skypipeline;	
 	VkVertexInputAttributeDescription	attributeDescriptions[MESH_ATTRIBUTE_COUNT];	//how the vertex is laid out
 	VkVertexInputBindingDescription		bindingDescription;		//how the vertex is described
 	Texture 							*defaultTexture;		//a default texture to use when none is specified
@@ -110,18 +111,29 @@ void gf3d_mesh_init(Uint32 mesh_max)
 		slog("cannot initialize sprite manager for 0 sprites");
 		return;
 	}
-	slog("Mesh init 1");
 	mesh_manager.chain_length = gf3d_swapchain_get_chain_length();
-	slog("Mesh init 2");
 	mesh_manager.mesh_list = (Mesh*)gfc_allocate_array(sizeof(Mesh),mesh_max);
-	slog("Mesh init 3");
 	mesh_manager.mesh_count = mesh_max;
-	slog("Mesh init 4");
 	mesh_manager.device = gf3d_vgraphics_get_default_logical_device();
-	slog("Mesh init 5");
 
 	gf3d_mesh_get_attribute_descriptions(&count);
-	slog("Mesh init 6");
+
+	mesh_manager.Skypipeline = gf3d_pipeline_create_from_config(
+		gf3d_vgraphics_get_default_logical_device(),
+		"config/sky_pipeline.cfg",
+		gf3d_vgraphics_get_view_extent(),
+		mesh_max,
+		gf3d_mesh_manager_get_bind_description(),
+		gf3d_mesh_get_attribute_descriptions(NULL),
+		count,
+		sizeof(SkyUBO),
+		VK_INDEX_TYPE_UINT16
+	);
+	if (!mesh_manager.Skypipeline)
+	{
+		slog("failed to create sky pipeline");
+		return;
+	}
 	mesh_manager.pipeline = gf3d_pipeline_create_from_config(
 		gf3d_vgraphics_get_default_logical_device(),
 		"config/model_pipeline.cfg",
@@ -133,9 +145,7 @@ void gf3d_mesh_init(Uint32 mesh_max)
 		sizeof(MeshUBO),
 		VK_INDEX_TYPE_UINT16
 	);
-	slog("Mesh init 7");
 	mesh_manager.defaultTexture = gf3d_texture_load("images/default.png");
-	slog("Mesh init 8");
 	if (__DEBUG)slog("mesh manager initiliazed");
 	atexit(gf3d_mesh_manager_close);
 }
@@ -281,7 +291,6 @@ Mesh* gf3d_mesh_load(const char* filename)
 	}
 
 	strncpy(mesh->filename, filename, sizeof(mesh->filename));
-	slog("mesh_new ok: %p", mesh); slog_sync();
 	mesh->_refCount = 1;
 
 	prim = gf3d_mesh_primitive_new();
@@ -312,7 +321,7 @@ void gf3d_mesh_primitive_queue_render(MeshPrimitive* prim, Pipeline* pipe, void*
 {
 	if ((!prim) || (!pipe) || (!uboData)) return;
 	if (!texture) texture = mesh_manager.defaultTexture;
-
+	slog("Queuing mesh primitive for render");
 	gf3d_pipeline_queue_render(
 		pipe,
 		prim->vertexBuffer,
@@ -327,6 +336,7 @@ void gf3d_mesh_queue_render(Mesh* mesh, Pipeline* pipe, void* uboData, Texture* 
 {
 	int i, c;
 	MeshPrimitive* prim;
+	slog("Queuing mesh for render");
 	if ((!mesh) || (!pipe) || (!uboData)) return;
 	c = gfc_list_count(mesh->primitives);
 	for (i = 0; i < c; i++)
@@ -335,6 +345,29 @@ void gf3d_mesh_queue_render(Mesh* mesh, Pipeline* pipe, void* uboData, Texture* 
 		if (!prim)continue;
 		gf3d_mesh_primitive_queue_render(prim, pipe, uboData, texture);
 	}
+}
+
+void gf3d_sky_draw(Mesh* mesh, GFC_Matrix4 modelMat, GFC_Color mod, Texture* texture)
+{
+	slog("Drawing sky mesh");
+	SkyUBO ubo = { 0 };
+
+	if (!mesh)return;
+	gfc_matrix4_copy(ubo.model, modelMat);
+	gf3d_vgraphics_get_view(&ubo.view);
+
+	ubo.view[0][3] = 0;
+	ubo.view[1][3] = 0;
+	ubo.view[2][3] = 0;
+	ubo.view[3][0] = 0;
+	ubo.view[3][1] = 0;
+	ubo.view[3][2] = 0;
+
+	gf3d_vgraphics_get_projection_matrix(&ubo.proj);
+
+	ubo.color = gfc_color_to_vector4f(mod);
+	gf3d_mesh_queue_render(mesh, mesh_manager.Skypipeline, &ubo, texture);
+	slog("Sky mesh queued for draw");
 }
 
 void gf3d_mesh_draw(Mesh *mesh, GFC_Matrix4 modelMat, GFC_Color mod, Texture *texture, GFC_Vector3D lightPos, GFC_Color lightColor)
@@ -349,9 +382,9 @@ void gf3d_mesh_draw(Mesh *mesh, GFC_Matrix4 modelMat, GFC_Color mod, Texture *te
 	ubo.lightColor = gfc_color_to_vector4f(lightColor);
 	ubo.lightPos = gfc_vector3dw(lightPos, 1.0);
 	ubo.camera = gfc_vector3dw(gf3d_camera_get_position(), 1.0);
-	slog("LightPos: %.2f %.2f %.2f  Color: %.2f %.2f %.2f",
-		ubo.lightPos.x, ubo.lightPos.y, ubo.lightPos.z,
-		ubo.lightColor.x, ubo.lightColor.y, ubo.lightColor.z);
+	//slog("LightPos: %.2f %.2f %.2f  Color: %.2f %.2f %.2f",
+	ubo.lightPos.x, ubo.lightPos.y, ubo.lightPos.z;
+	ubo.lightColor.x, ubo.lightColor.y, ubo.lightColor.z;
 	gf3d_mesh_queue_render(mesh, mesh_manager.pipeline, &ubo, texture);
 }
 

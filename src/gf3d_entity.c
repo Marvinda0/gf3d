@@ -125,6 +125,7 @@ void entity_think_all() {
 
 void entity_update(Entity* self) {
 	if (!self) return;
+		 
 	if (self->update) {
 		self->update(self);
 	}

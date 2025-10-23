@@ -75,6 +75,10 @@ int main(int argc,char *argv[])
     // main game loop    
     gfc_matrix4_identity(id);
 
+    
+    Mesh *skyMesh = gf3d_mesh_load("models/sky/sky.obj");
+    Texture *skyTexture = gf3d_texture_load("models/sky/sky.png");
+
     Entity* monster = monster_spawn(gfc_vector3d(0, 0, 0), GFC_COLOR_WHITE);
     gf3d_camera_look_at(gfc_vector3d(0,0,0),&cam);
     while(!_done)
@@ -89,6 +93,8 @@ int main(int argc,char *argv[])
         gf3d_camera_update_view();
         gf3d_vgraphics_render_start();
                 //3D draws
+                gf3d_sky_draw(skyMesh, id, GFC_COLOR_WHITE, skyTexture);
+                
                 entity_draw_all(gfc_vector3d(0,50,0), GFC_COLOR_WHITE);
                 //2D draws
                 gf2d_font_draw_line_tag("ALT+F4 to exit",FT_H1,GFC_COLOR_WHITE, gfc_vector2d(10,10));

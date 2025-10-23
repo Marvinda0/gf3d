@@ -118,7 +118,6 @@ void gf3d_vgraphics_init(const char *config)
     short int fullscreen = 0;
     short int enableValidation = 0;
     short int enableDebug = 0;
-    slog("gf3d vgraphics 1");
     json = gfc_pak_load_json(config);
     if (!json)
     {
@@ -127,7 +126,6 @@ void gf3d_vgraphics_init(const char *config)
         return;
     }
     setup = sj_object_get_value(json,"setup");
-    slog("gf3d vgraphics 2");
     if (!setup)
     {
         slog("graphics config file missing setup data, exiting");
@@ -135,19 +133,12 @@ void gf3d_vgraphics_init(const char *config)
         exit(0);
         return;
     }
-    slog("gf3d vgraphics 3");
     windowName = sj_object_get_value_as_string(setup,"application_name");
-    slog("gf3d vgraphics 4");
     sj_value_as_vector2d(sj_object_get_value(setup,"resolution"),&resolution);
-    slog("gf3d vgraphics 5");
     gf3d_vgraphics.bgcolor = sj_value_as_color(sj_object_get_value(setup,"background"));
-    slog("gf3d vgraphics 6");
     sj_get_bool_value(sj_object_get_value(setup,"fullscreen"),&fullscreen);
-    slog("gf3d vgraphics 7");
     sj_get_bool_value(sj_object_get_value(json,"enable_debug"),&enableDebug);
-    slog("gf3d vgraphics 8");
     sj_get_bool_value(sj_object_get_value(json,"enable_validation"),&enableValidation);
-    slog("gf3d vgraphics 9");
     
     if (resolution.y == 0)
     {
@@ -161,7 +152,6 @@ void gf3d_vgraphics_init(const char *config)
     gfc_matrix4_identity(gf3d_vgraphics.ubo.view);
     gfc_matrix4_identity(gf3d_vgraphics.ubo.proj);
     
-    slog("gf3d vgraphics 10");
     gfc_matrix4_perspective(
         gf3d_vgraphics.ubo.proj,
         45 * GFC_DEGTORAD,
@@ -169,9 +159,7 @@ void gf3d_vgraphics_init(const char *config)
         0.1f,
         100000
     );
-    slog("gf3d vgraphics 11");
     gf3d_vgraphics.ubo.proj[1][1] *= -1;
-    slog("gf3d vgraphics 12");
     gf3d_vgraphics_setup(
         windowName,
         resolution.x,
@@ -183,16 +171,12 @@ void gf3d_vgraphics_init(const char *config)
         );
     VkDevice tmp = gf3d_vgraphics_get_default_logical_device();
     slog("device handle from get_default_logical_device: %p", tmp);
-    slog("gf3d vgraphics 12.9  (returned from setup)");
-    slog("gf3d vgraphics 13");
     gf3d_vgraphics.device = gf3d_vgraphics_get_default_logical_device();
-    slog("gf3d vgraphics 14");
 ;
     gf3d_vqueues_setup_device_queues(gf3d_vgraphics.device);
     // swap chain!!!
     gf3d_swapchain_init(gf3d_vgraphics.gpu,gf3d_vgraphics.device,gf3d_vgraphics.surface,resolution.x,resolution.y);
     gf3d_pipeline_init(16);// how many different rendering pipelines we need
-    slog("gf3d vgraphics 15");
     // 2D stuff
     SDL_PixelFormatEnumToMasks(SDL_PIXELFORMAT_RGBA32,
                                 &gf3d_vgraphics.bitdepth,
@@ -248,7 +232,6 @@ void gf3d_vgraphics_setup(
     }
     atexit(SDL_Quit);
     SDL_ShowCursor(SDL_DISABLE);
-    slog("setup 1");
     if (fullscreen)
     {
         if (renderWidth == 0)
@@ -260,7 +243,6 @@ void gf3d_vgraphics_setup(
             flags |= SDL_WINDOW_FULLSCREEN;
         }
     }
-    slog("setup 2");
 	slog_sync();
     gf3d_vgraphics.main_window = SDL_CreateWindow(windowName,
                              SDL_WINDOWPOS_UNDEFINED,
@@ -268,7 +250,6 @@ void gf3d_vgraphics_setup(
                              renderWidth, renderHeight,
                              flags);
 	slog_sync();
-    slog("setup 3");
     if (!gf3d_vgraphics.main_window)
     {
         slog("failed to create main window: %s",SDL_GetError());
@@ -276,16 +257,13 @@ void gf3d_vgraphics_setup(
         exit(0);
         return;
     }
-    slog("setup 4");
 	slog_sync();
     // instance extension configuration
     
     gf3d_extensions_instance_init(config);
-    slog("setup 5");
 	slog_sync();
     // get the extensions that are needed for rendering to an SDL Window
     SDL_Vulkan_GetInstanceExtensions(gf3d_vgraphics.main_window, &(gf3d_vgraphics.sdl_extension_count), NULL);
-    slog("setup 6");
     if (gf3d_vgraphics.sdl_extension_count > 0)
     {
         gf3d_vgraphics.sdl_extension_names = gfc_allocate_array(sizeof(const char *),gf3d_vgraphics.sdl_extension_count);
@@ -304,7 +282,6 @@ void gf3d_vgraphics_setup(
         exit(0);
         return;
     }
-    slog("setup 7");
 	slog_sync();
     // setup app info
     gf3d_vgraphics.vk_app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -314,12 +291,10 @@ void gf3d_vgraphics_setup(
     gf3d_vgraphics.vk_app_info.pEngineName = windowName;
     gf3d_vgraphics.vk_app_info.engineVersion = 0;
     gf3d_vgraphics.vk_app_info.apiVersion = VK_API_VERSION_1_2;
-    slog("setup 8");
     
     gf3d_vgraphics.vk_instance_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     gf3d_vgraphics.vk_instance_info.pNext = NULL;
     gf3d_vgraphics.vk_instance_info.pApplicationInfo = &gf3d_vgraphics.vk_app_info;
-    slog("setup 9");
     if (enableValidation)
     {
         gf3d_validation_init(config);
@@ -333,32 +308,25 @@ void gf3d_vgraphics_setup(
         gf3d_vgraphics.vk_instance_info.enabledLayerCount = 0;
         gf3d_vgraphics.vk_instance_info.ppEnabledLayerNames = NULL;
     }
-    slog("setup 9");
     gf3d_vgraphics.vk_instance_info.ppEnabledExtensionNames = gf3d_extensions_get_instance_enabled_names(&enabledExtensionCount);
     gf3d_vgraphics.vk_instance_info.enabledExtensionCount = enabledExtensionCount;
-    slog("setup 10");
 	slog_sync();
-    slog("setup 11");
     // create instance
     vkCreateInstance(&gf3d_vgraphics.vk_instance_info, NULL, &gf3d_vgraphics.vk_instance);
-    slog("setup 12");
     if (!gf3d_vgraphics.vk_instance)
     {
         slog("failed to create a vulkan instance");
         gf3d_vgraphics_close();
         return;
     }
-    slog("setup 13");
 	slog_sync();
     if (enableDebug)
     {
         gf3d_debug_setup(gf3d_vgraphics.vk_instance);
     }
-    slog("setup 14");
     atexit(gf3d_vgraphics_close);
     
     // create a surface for the window
-    slog("setup 15");
     SDL_Vulkan_CreateSurface(gf3d_vgraphics.main_window, gf3d_vgraphics.vk_instance, &gf3d_vgraphics.surface);
     
     if (gf3d_vgraphics.surface == VK_NULL_HANDLE)
@@ -367,17 +335,14 @@ void gf3d_vgraphics_setup(
         gf3d_vgraphics_close();
         return;
     }
-    slog("setup 16");
     gf3d_device_manager_init(config, gf3d_vgraphics.vk_instance,gf3d_vgraphics.surface);
 
-    slog("setup 17");
     gf3d_vgraphics.gpu = gf3d_devices_get_best_device();
     if(!gf3d_vgraphics.gpu){
         slog("Failed to select graphics card.");
         gf3d_vgraphics_close();
         return;
     }
-    slog("setup 18");
     gf3d_vgraphics.device = gf3d_device_get();
     if (gf3d_vgraphics.device != VK_NULL_HANDLE)
     {
@@ -387,7 +352,6 @@ void gf3d_vgraphics_setup(
     {
         exit(0);
     }
-    slog("setup 19");
     slog("setup END");
 }
 
