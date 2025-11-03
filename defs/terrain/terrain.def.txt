@@ -1,9 +1,11 @@
 {
-	"world":
-	{
-		"terrainMesh": path to file"",
-		"TerrainTexture":"",]
-		"lighColor":[],
-		"lightPos":[] 
-	}
+    "world":
+    {
+        "terrainMesh":"models/terrain/terrain.obj",
+        "terrainTexture":"models/terrain/grass.png", 
+        "lightColor": [255,255,255,255],
+        "lightPos": [0,0,1000,10]
+
+    }
+
 }

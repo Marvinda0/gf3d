@@ -23,6 +23,7 @@
 #include "gf3d_mesh.h"
 #include "gf3d_entity.h"
 #include "monster.h"
+#include "world.h"
 
 extern int __DEBUG;
 
@@ -48,7 +49,7 @@ int main(int argc,char *argv[])
     GFC_Vector3D lightPos = {0,50,0};
     GFC_Color lightColor = {1,1,1,1};
     GFC_Vector3D cam = {0,50,0};
-    GFC_Matrix4 id,dinoM;
+    GFC_Matrix4 id,dinoM, terrainMat;
     //initializtion    
     parse_arguments(argc,argv);
     init_logger("gf3d.log",0);
@@ -79,8 +80,12 @@ int main(int argc,char *argv[])
     Mesh *skyMesh = gf3d_mesh_load("models/sky/sky.obj");
     Texture *skyTexture = gf3d_texture_load("models/sky/sky.png");
 
+    //World
+    World* world = world_load("defs/terrain/terrain.def.txt");
+    gfc_matrix4_multiply_scalar(terrainMat, id, 5);
+
     Entity* monster = monster_spawn(gfc_vector3d(0, 0, 0), GFC_COLOR_WHITE);
-    gf3d_camera_look_at(gfc_vector3d(0,0,0),&cam);
+    gf3d_camera_look_at(gfc_vector3d(0,-100,0),&cam);
     while(!_done)
     {
         gfc_input_update();
@@ -93,8 +98,8 @@ int main(int argc,char *argv[])
         gf3d_camera_update_view();
         gf3d_vgraphics_render_start();
                 //3D draws
-                gf3d_sky_draw(skyMesh, id, GFC_COLOR_WHITE, skyTexture);
-                
+                world_draw(world);
+                gf3d_sky_draw(skyMesh, id, GFC_COLOR_WHITE, skyTexture);        
                 entity_draw_all(gfc_vector3d(0,50,0), GFC_COLOR_WHITE);
                 //2D draws
                 gf2d_font_draw_line_tag("ALT+F4 to exit",FT_H1,GFC_COLOR_WHITE, gfc_vector2d(10,10));

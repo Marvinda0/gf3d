@@ -321,7 +321,7 @@ void gf3d_mesh_primitive_queue_render(MeshPrimitive* prim, Pipeline* pipe, void*
 {
 	if ((!prim) || (!pipe) || (!uboData)) return;
 	if (!texture) texture = mesh_manager.defaultTexture;
-	slog("Queuing mesh primitive for render");
+	//slog("Queuing mesh primitive for render");
 	gf3d_pipeline_queue_render(
 		pipe,
 		prim->vertexBuffer,
@@ -336,7 +336,7 @@ void gf3d_mesh_queue_render(Mesh* mesh, Pipeline* pipe, void* uboData, Texture* 
 {
 	int i, c;
 	MeshPrimitive* prim;
-	slog("Queuing mesh for render");
+	//slog("Queuing mesh for render");
 	if ((!mesh) || (!pipe) || (!uboData)) return;
 	c = gfc_list_count(mesh->primitives);
 	for (i = 0; i < c; i++)
@@ -349,7 +349,7 @@ void gf3d_mesh_queue_render(Mesh* mesh, Pipeline* pipe, void* uboData, Texture* 
 
 void gf3d_sky_draw(Mesh* mesh, GFC_Matrix4 modelMat, GFC_Color mod, Texture* texture)
 {
-	slog("Drawing sky mesh");
+	//slog("Drawing sky mesh");
 	SkyUBO ubo = { 0 };
 
 	if (!mesh)return;
@@ -367,7 +367,7 @@ void gf3d_sky_draw(Mesh* mesh, GFC_Matrix4 modelMat, GFC_Color mod, Texture* tex
 
 	ubo.color = gfc_color_to_vector4f(mod);
 	gf3d_mesh_queue_render(mesh, mesh_manager.Skypipeline, &ubo, texture);
-	slog("Sky mesh queued for draw");
+	//slog("Sky mesh queued for draw");
 }
 
 void gf3d_mesh_draw(Mesh *mesh, GFC_Matrix4 modelMat, GFC_Color mod, Texture *texture, GFC_Vector3D lightPos, GFC_Color lightColor)
