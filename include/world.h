@@ -20,5 +20,7 @@ void world_free(World* world);
 
 void world_draw(World* world);
 
+World* get_the_world();
+
 Uint8 world_edge_test(World* world, GFC_Vector3D start, GFC_Vector3D end, GFC_Vector3D* contact);
 #endif

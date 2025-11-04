@@ -5,21 +5,22 @@
 #include "gfc_primitives.h"
 
 #include "gf3d_mesh.h"
+#include "world.h"
 
 typedef struct Entity_S
 {
 	Uint8			_inuse;
-	GFC_TextLine	name;
-	Mesh			*mesh;
-	Texture			*texture;
-	GFC_Color		color;
-	GFC_Matrix4		matrix;
-	GFC_Vector3D	position;
-	GFC_Vector3D	rotation;
-	GFC_Vector3D	scale;
-	GFC_Vector3D	speed;
+	GFC_TextLine	name; 
+	Mesh			*mesh; // mesh to draw for the entity
+	Texture			*texture; // texture to apply to the mesh
+	GFC_Color		color; // color tint to apply to the entity
+	GFC_Matrix4		matrix; // cached matrix for rendering
+	GFC_Vector3D	position; // where the entity is located
+	GFC_Vector3D	rotation; // in radians
+	GFC_Vector3D	scale; // how big the entity is
+	GFC_Vector3D	speed; // movement speed
 
-	GFC_Box bounds;
+	GFC_Box bounds; // collision bounds
 	void (*draw)(struct Entity_S* self);
 	void (*think)(struct Entity_S* self);
 	void (*update)(struct Entity_S *self);
@@ -96,6 +97,14 @@ void entity_update(Entity* self);
  */
 void entity_update_all();
 
+/*
+* @brief this function gets the floor position under the entity
+* @param self: the entity to check
+* @param world: the world to check against
+* @param contact: the position of the floor under the entity
+*/
+Uint8 entity_get_floor_position(Entity* self, World* world, GFC_Vector3D* contact);
 #endif
+
 
 

@@ -103,3 +103,8 @@ void world_draw(World *world)
 	gfc_matrix4_identity(modelMat);
 	gf3d_mesh_draw(world->mesh, modelMat, GFC_COLOR_WHITE, world->Texture, world->lightpos, world->lightcolor);
 }
+
+World * get_the_world()
+{
+	return world;
+}

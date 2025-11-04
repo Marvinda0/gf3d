@@ -139,5 +139,13 @@ void entity_update_all() {
 	}
 }
 
+Uint8 entity_get_floor_position(Entity* self, World* world, GFC_Vector3D *contact) {
+	GFC_Vector3D down;
+	if (!self || !world || !contact) return 0;
+	down = self->position; //start at entity position
+	down.z -= 1000; //go down a ways
+	return world_edge_test(world, self->position, down, contact);
+}
+
 
 

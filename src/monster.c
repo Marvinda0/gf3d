@@ -21,6 +21,8 @@ Entity* monster_spawn(GFC_Vector3D position, GFC_Color color)
 	self->think = monster_think;
 	self->update = monster_update;
 	self->draw = entity_draw;
+	
+	entity_get_floor_position(self, get_the_world(), &self->position); // place on ground
 
 	return self;
 }
