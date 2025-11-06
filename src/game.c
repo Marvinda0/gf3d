@@ -83,7 +83,7 @@ int main(int argc, char* argv[])
     gfc_matrix4_multiply_scalar(terrainMat, id, 5);
 
     // Spawn monster at z=20 (high up so you can see it)
-    Entity* monster = monster_spawn(gfc_vector3d(0, 0, 20), GFC_COLOR_WHITE);
+    Entity* monster = monster_spawn(gfc_vector3d(0, 0, 0), GFC_COLOR_WHITE);
     if (!monster) {
         slog("Failed to spawn monster!");
         _done = 1;

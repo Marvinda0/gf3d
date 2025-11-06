@@ -158,11 +158,18 @@ void entity_update_all() {
 }
 
 Uint8 entity_get_floor_position(Entity* self, World* world, GFC_Vector3D *contact) {
-	GFC_Vector3D down;
 	if (!self || !world || !contact) return 0;
-	down = self->position; //start at entity position
-	down.z -= 1000; //go down a ways
-	return world_edge_test(world, self->position, down, contact);
+	GFC_Vector3D start = self->position;
+	GFC_Vector3D end = self->position;
+
+	start.z += 3.0f;     // small upward offset before casting
+	end.z -= 50000.0f; // cast far down (in case terrain is large)
+
+	if (world_edge_test(world, start, end, contact)) {
+		contact->z += 4.9f; // lift collision point slightly so entity rests above floor
+		return 1;
+	}
+	return 0;
 }
 
 

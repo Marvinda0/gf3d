@@ -5,7 +5,7 @@
 #include "camera_entity.h"
 #include "world.h"
 
-#define GRAVITY -0.0f
+#define GRAVITY -0.3f
 
 typedef struct {
     Entity* camera;
@@ -19,6 +19,7 @@ static Entity* player = NULL;
 Entity* monster_spawn(GFC_Vector3D position, GFC_Color color)
 {
     Entity* self;
+    GFC_Vector3D groundPos;
     self = entity_new();
     if (!self) return NULL;
 
@@ -29,7 +30,13 @@ Entity* monster_spawn(GFC_Vector3D position, GFC_Color color)
 
     self->color = color;
     self->position = position;
-    self->position.z = 5.0f;
+    self->position.z = 10.0f;
+    if (entity_get_floor_position(self, get_the_world(), &groundPos)) {
+        self->position.z = groundPos.z;
+    }
+    else {
+        slog("No ground detected under monster spawn position!");
+    }
     self->rotation = gfc_vector3d(0, 0, GFC_PI); // face forward
     self->velocity = gfc_vector3d(0, 0, 0);
 
@@ -56,7 +63,6 @@ Entity* monster_spawn(GFC_Vector3D position, GFC_Color color)
     }
 
     // Place on ground
-    GFC_Vector3D groundPos;
     if (entity_get_floor_position(self, get_the_world(), &groundPos)) {
         self->position.z = groundPos.z;
     }
@@ -98,12 +104,13 @@ void monster_apply_gravity(Entity* self)
     }
 
     // Check if we need to stop falling
-    float distanceToGround = self->position.z - groundContact.z;
-
-    if (distanceToGround <= 0.01f && self->velocity.z <= 0) {
-        // On the ground
+    if (self->position.z <= groundContact.z) {
         self->position.z = groundContact.z;
         self->velocity.z = 0;
+    }
+    else {
+        // Apply gravity when above floor
+        self->velocity.z += GRAVITY;
     }
 }
 
@@ -219,7 +226,7 @@ void monster_update(Entity* self)
         self->position.x, self->position.y, self->position.z);
 
     // Apply gravity and ground detection
-    //monster_apply_gravity(self);
+    monster_apply_gravity(self);
 
     // Apply movement with camera-relative direction
     monster_move(self);
