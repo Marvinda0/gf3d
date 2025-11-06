@@ -2,6 +2,8 @@
 #define __MONSTER_H__
 
 #include "gf3d_entity.h"
+#include "camera_entity.h"
+
 
 /**
  * @brief this function spawns a monster entity at the given position
@@ -14,6 +16,8 @@ void monster_think(Entity* self);
 
 void monster_update(Entity* self);
 
+Entity* player_get_the();
 
+GFC_Vector3D player_get_forward();
 #endif
 

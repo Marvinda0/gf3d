@@ -47,7 +47,7 @@ void entity_free(Entity * self)
 	memset(self, 0, sizeof(Entity));
 }
 
-void entity_system_init(Uint8 max_entities)
+void entity_system_init(Uint32 max_entities)
 {
 	if (!max_entities)
 	{
@@ -109,18 +109,36 @@ void entity_draw_all() {
 }
 
 void entity_think(Entity* self) {
-	if (!self) return;
+	if (!self) {
+		slog("entity_think: self is NULL!");
+		return;
+	}
+	slog("entity_think called for: %s, think ptr=%p", self->name, self->think);
+
 	if (self->think) {
+		slog("About to call think function...");
 		self->think(self);
+		slog("Finished calling think function");
+	}
+	else {
+		slog("No think function for %s", self->name);
 	}
 }
 
 void entity_think_all() {	
 	int i;
+	int count = 0;
 	for (i = 0; i < entity_system.entity_max; i++) {
 		if (!entity_system.entity_list[i]._inuse) continue;
+		count++;
+		slog("Found entity %d: _inuse=%d, think=%p, name=%s",
+			i,
+			entity_system.entity_list[i]._inuse,
+			entity_system.entity_list[i].think,
+			entity_system.entity_list[i].name);
 		entity_think(&entity_system.entity_list[i]);
 	}
+	slog("Total entities found: %d", count);
 }
 
 void entity_update(Entity* self) {

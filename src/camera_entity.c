@@ -1,69 +1,91 @@
 #include "simple_logger.h"
 #include "gfc_input.h"
 #include "gf3d_camera.h"
+#include "gf3d_entity.h"
 #include "camera_entity.h"
 
-typedef struct
+
+void camera_entity_think(Entity *self)
 {
-		GFC_Vector3D target;
-};
+    if ((!self) || (!self->data))return;
+    CameraEntityData* data;
+    GFC_Vector3D offset;
+    float followDist, angle, vangle, panStep = .05, vpanStep = .25;
+    //followHeight,     followHeight = data->followHeight; //Maybe we can use this as max in either direction
+    data = self->data;
+    followDist = data->followDist;
+    angle = data->angle;
+    offset = gfc_vector3d(0, 1, 0);
+
+    //Camera Movement
+    if (gfc_input_command_down("panright")) {
+        angle += panStep;
+    }
+    if (gfc_input_command_down("panleft")) {
+        angle -= panStep;
+    }
+    data->angle = angle;
+    //dampen? is it fine till we get our mouse setup?
+    gfc_vector3d_rotate_about_z(&offset, angle);
+
+    //Up and down: part of vangle
+    vangle = data->vangle;
+    if (gfc_input_command_down("panup")) {
+        vangle += vpanStep;
+    }
+    if (gfc_input_command_down("pandown")) {
+        vangle -= vpanStep;
+    }
+    if (vangle < -2.25) { vangle = -2.25; }
+    if (vangle > 10.75) { vangle = 10.75; }
+    data->vangle = vangle;
 
 
-//camera entity free (self)
-/*
-data
-if not self or nor data in self return
-data = to self data5
-//where the data gets cleaned up
-free data
+    //gfc_vector3d_rotate_about_x(&offset, vangle);
 
-*/
+    gfc_vector3d_scale(offset, offset, followDist);
+    gfc_vector3d_add(self->position, data->target->position, offset);
 
-//camera entity think (self)
-/* Input staff
-* define move 5 turn 01 and pitch 0
-* float yaw 0
-* 
-* 3d vector movement = 0
-* 3d vector dir = 0
-* init camera data data pointer
-sanity check
-data = to self data
+    //TODO make it so it cant go below a certain point
 
-vecntor sub, (dir,data target, self position)
-normalize &dir
+    self->position.z = vangle + data->target->position.z;
+    //slog("%f, %f, %f: %f",self->position.x, self->position.y, self->position.z, vangle);
+    gf3d_camera_look_at(data->target->position, &self->position);
+    //Is is subtract to get the forward vector?
+    gfc_vector3d_sub(data->forward, self->position, data->target->position);
+    gfc_vector3d_normalize(&data->forward);
+    //slog("FORWARD: %f %f %f", data->forward.x, data->forward.y, data->forward.z);
 
-if (gather input) etc
+}
 
-scale dir, movement.y //before paning, after walk //move-yaw
-add data tarrget, target movement
+Entity* camera_entity_spawn(GFC_Vector3D position, Entity* target)
+{
+    CameraEntityData* data;
+    //GFC_Vector3D dir;
+    Entity* self;
+    self = entity_new();
+    if (!self)return NULL;
 
-normalize dir
-rotate &dir by HalfPI
+    data = gfc_allocate_array(sizeof(CameraEntityData), 1);
+    self->data = data;
+    self->position = position;
+    self->think = camera_entity_think;
+    //self->free = camera_entity_free;
+    data->target = target;
+    //15 and 8 originally
+    data->followDist = 20;
+    data->followHeight = 13;
+    data->angle = GFC_PI;
+    //set the data tartget as target
+    //subtract to get the unit vector in front of our face?
+    //gfc_vector3d_sub()
 
-add vector (self psoiton + self->position,movement)
-add vector (data + self->position,movement)
-if pitch
-	data targetz += piych
-if yaw
-sub target to our position
-normalize dir
-rotate &dir yaw
+    return self;
+}
 
-*/
-
-//camera entity spawn (position, target)
-/*
-* vectro 3d dir
-data
-self
-entity new
-sanity check
-sata allocate array cameradatasize 1
-sanity check
-self->fill
-vectror 3d sub (dit, target.position)
-vectror 3d normalize (&dir)
-vectror 3d add (data->target, positont, dir);
-camera look at datatarget from my new postition self-> position
-*/
+//void camera_entity_free(CameraEntityData* self)
+//{
+//	if (!self)return;
+//	if (self->free)self->free(self);
+//	free(self);
+//}

@@ -2,10 +2,12 @@
 #define __ENTITY_H__
 
 #include "gfc_text.h"
+#include "gfc_vector.h"
+#include "gfc_matrix.h"
 #include "gfc_primitives.h"
-
-#include "gf3d_mesh.h"
 #include "world.h"
+#include "gf3d_mesh.h"
+#include "gf3d_texture.h"
 
 typedef struct Entity_S
 {
@@ -18,9 +20,10 @@ typedef struct Entity_S
 	GFC_Vector3D	position; // where the entity is located
 	GFC_Vector3D	rotation; // in radians
 	GFC_Vector3D	scale; // how big the entity is
-	GFC_Vector3D	speed; // movement speed
+	GFC_Vector3D	velocity; // movement speed
+	float speed;
 
-	GFC_Box bounds; // collision bounds
+	GFC_Box *bounds; // collision bounds
 	void (*draw)(struct Entity_S* self);
 	void (*think)(struct Entity_S* self);
 	void (*update)(struct Entity_S *self);
@@ -47,7 +50,7 @@ void entity_free(Entity* self);
  * @param max_entities the maximum number of entities to support
  * @returns void
  */
-void entity_system_init(Uint8 max_entities);
+void entity_system_init(Uint32 max_entities);
 
 /**
  * @brief this function closes the entity system and frees all entities
@@ -103,8 +106,8 @@ void entity_update_all();
 * @param world: the world to check against
 * @param contact: the position of the floor under the entity
 */
-Uint8 entity_get_floor_position(Entity* self, World* world, GFC_Vector3D* contact);
+Uint8 entity_get_floor_position(Entity* self, World *world, GFC_Vector3D* contact);
 #endif
 
 
-
+// 	return world_get_floor_position(world, self->position, contact);

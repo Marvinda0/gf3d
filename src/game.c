@@ -31,7 +31,7 @@ static int _done = 0;
 static Uint32 frame_delay = 33;
 static float fps = 0;
 
-void parse_arguments(int argc,char *argv[]);
+void parse_arguments(int argc, char* argv[]);
 void game_frame_delay();
 
 void exitGame()
@@ -39,26 +39,24 @@ void exitGame()
     _done = 1;
 }
 
-
-int main(int argc,char *argv[])
+int main(int argc, char* argv[])
 {
     //local variables
-    Mesh *mesh;
-    Texture *texture;
-    float theta = 0;
-    GFC_Vector3D lightPos = {0,50,0};
-    GFC_Color lightColor = {1,1,1,1};
-    GFC_Vector3D cam = {0,50,0};
-    GFC_Matrix4 id,dinoM, terrainMat;
+    GFC_Vector3D lightPos = { 0,50,0 };
+    GFC_Color lightColor = { 1,1,1,1 };
+    GFC_Matrix4 id, terrainMat;
+
     //initializtion    
-    parse_arguments(argc,argv);
-    init_logger("gf3d.log",0);
+    parse_arguments(argc, argv);
+    init_logger("gf3d.log", 0);
     slog("gf3d begin");
+
     //gfc init
     gfc_input_init("config/input.cfg");
     gfc_config_def_init();
     gfc_action_init(1024);
     slog("Passed input");
+
     //gf3d init
     gf3d_vgraphics_init("config/setup.cfg");
     slog("Passed ginit");
@@ -66,49 +64,61 @@ int main(int argc,char *argv[])
     slog("Passed finit");
     gf2d_actor_init(100);
     slog("Passed 3");
+
     //entity system init
     entity_system_init(1000);
-    
+
     //game init
     srand(SDL_GetTicks());
     slog_sync();
     gf2d_mouse_load("actors/mouse.actor");
-    // main game loop    
+
     gfc_matrix4_identity(id);
 
-    
-    Mesh *skyMesh = gf3d_mesh_load("models/sky/sky.obj");
-    Texture *skyTexture = gf3d_texture_load("models/sky/sky.png");
+    Mesh* skyMesh = gf3d_mesh_load("models/sky/sky.obj");
+    Texture* skyTexture = gf3d_texture_load("models/sky/sky.png");
 
     //World
     World* world = world_load("defs/terrain/terrain.def.txt");
     gfc_matrix4_multiply_scalar(terrainMat, id, 5);
 
-    Entity* monster = monster_spawn(gfc_vector3d(0, 0, 0), GFC_COLOR_WHITE);
-    gf3d_camera_look_at(gfc_vector3d(0,-100,0),&cam);
-    while(!_done)
+    // Spawn monster at z=20 (high up so you can see it)
+    Entity* monster = monster_spawn(gfc_vector3d(0, 0, 20), GFC_COLOR_WHITE);
+    if (!monster) {
+        slog("Failed to spawn monster!");
+        _done = 1;
+    }
+
+    // Main game loop
+    while (!_done)
     {
         gfc_input_update();
         gf2d_mouse_update();
         gf2d_font_update();
+
         //entity updates
         entity_think_all();
         entity_update_all();
-        //camera updaes
+
+        //camera updates
         gf3d_camera_update_view();
+
         gf3d_vgraphics_render_start();
-                //3D draws
-                world_draw(world);
-                gf3d_sky_draw(skyMesh, id, GFC_COLOR_WHITE, skyTexture);        
-                entity_draw_all(gfc_vector3d(0,50,0), GFC_COLOR_WHITE);
-                //2D draws
-                gf2d_font_draw_line_tag("ALT+F4 to exit",FT_H1,GFC_COLOR_WHITE, gfc_vector2d(10,10));
-                gf2d_mouse_draw();
+        //3D draws
+        world_draw(world);
+        gf3d_sky_draw(skyMesh, id, GFC_COLOR_WHITE, skyTexture);
+        entity_draw_all();
+
+        //2D draws
+        gf2d_font_draw_line_tag("WASD to move, Arrows to pan camera", FT_H1, GFC_COLOR_WHITE, gfc_vector2d(10, 10));
+        gf2d_mouse_draw();
         gf3d_vgraphics_render_end();
-        if (gfc_input_command_down("exit"))_done = 1; // exit condition
+
+        if (gfc_input_command_down("exit")) _done = 1;
         game_frame_delay();
-    }    
-    vkDeviceWaitIdle(gf3d_vgraphics_get_default_logical_device());    
+    }
+
+    vkDeviceWaitIdle(gf3d_vgraphics_get_default_logical_device());
     //cleanup
     slog("gf3d program end");
     exit(0);
@@ -116,17 +126,16 @@ int main(int argc,char *argv[])
     return 0;
 }
 
-void parse_arguments(int argc,char *argv[])
+void parse_arguments(int argc, char* argv[])
 {
     int a;
-
-    for (a = 1; a < argc;a++)
+    for (a = 1; a < argc; a++)
     {
-        if (strcmp(argv[a],"--debug") == 0)
+        if (strcmp(argv[a], "--debug") == 0)
         {
             __DEBUG = 1;
         }
-    }    
+    }
 }
 
 void game_frame_delay()
@@ -135,14 +144,13 @@ void game_frame_delay()
     static Uint32 now;
     static Uint32 then;
     then = now;
-    slog_sync();// make sure logs get written when we have time to write it
+    slog_sync();
     now = SDL_GetTicks();
     diff = (now - then);
     if (diff < frame_delay)
     {
         SDL_Delay(frame_delay - diff);
     }
-    fps = 1000.0/MAX(SDL_GetTicks() - then,0.001);
-//     slog("fps: %f",fps);
+    fps = 1000.0 / MAX(SDL_GetTicks() - then, 0.001);
 }
 /*eol@eof*/

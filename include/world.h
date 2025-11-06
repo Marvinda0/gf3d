@@ -9,7 +9,7 @@ typedef struct
 	Texture			*Texture;
 	GFC_Color		lightcolor;
 	GFC_Vector3D	lightpos;
-	GFC_List		*entityList;
+	GFC_List		entityList;
 }World;
 
 World* world_new();
