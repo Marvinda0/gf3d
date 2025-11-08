@@ -200,19 +200,19 @@ void monster_think(Entity* self)
     // Input handling
     if (gfc_input_command_down("walkforward")) {
         slog("INPUT: walkforward detected!"); 
-        self->velocity.y += moveSpeed;
+        self->velocity.y -= moveSpeed;
     }
     if (gfc_input_command_down("walkback")) {
         slog("INPUT: walkback detected!");  
-        self->velocity.y -= moveSpeed;
+        self->velocity.y += moveSpeed;
     }
     if (gfc_input_command_down("walkleft")) {
         slog("INPUT: walkleft detected!");  
-        self->velocity.x -= moveSpeed;
+        self->velocity.x += moveSpeed;
     }
     if (gfc_input_command_down("walkright")) {
         slog("INPUT: walkright detected!");  
-        self->velocity.x += moveSpeed;
+        self->velocity.x -= moveSpeed;
     }
 
     slog("velocity: (%.2f, %.2f, %.2f)", self->velocity.x, self->velocity.y, self->velocity.z);  
