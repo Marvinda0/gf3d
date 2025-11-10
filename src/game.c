@@ -22,7 +22,8 @@
 #include "gf3d_camera.h"
 #include "gf3d_mesh.h"
 #include "gf3d_entity.h"
-#include "monster.h"
+//#include "monster.h"
+#include "plane_entity.h"
 #include "world.h"
 
 extern int __DEBUG;
@@ -45,6 +46,7 @@ int main(int argc, char* argv[])
     GFC_Vector3D lightPos = { 0,50,0 };
     GFC_Color lightColor = { 1,1,1,1 };
     GFC_Matrix4 id, terrainMat;
+    GFC_Vector3D spawnPos = gfc_vector3d(0, 0, 100);
 
     //initializtion    
     parse_arguments(argc, argv);
@@ -83,8 +85,8 @@ int main(int argc, char* argv[])
     gfc_matrix4_multiply_scalar(terrainMat, id, 5);
 
     // Spawn monster at z=20 (high up so you can see it)
-    Entity* monster = monster_spawn(gfc_vector3d(0, 0, 0), GFC_COLOR_WHITE);
-    if (!monster) {
+    Entity* player = plane_spawn(spawnPos, GFC_COLOR_WHITE);
+    if (!player) {
         slog("Failed to spawn monster!");
         _done = 1;
     }

@@ -172,5 +172,15 @@ Uint8 entity_get_floor_position(Entity* self, World* world, GFC_Vector3D *contac
 	return 0;
 }
 
+// Simple sphere collision for the moment
+Uint8 entity_sphere_collision(Entity* a, Entity* b, float radiusA, float radiusB)
+{
+	float dx = a->position.x - b->position.x;
+	float dy = a->position.y - b->position.y;
+	float dz = a->position.z - b->position.z;
+	float distSq = dx * dx + dy * dy + dz * dz;
+	float radiusSum = radiusA + radiusB;
+	return (distSq < radiusSum * radiusSum);
+}
 
 

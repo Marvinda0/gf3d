@@ -9,12 +9,13 @@
 #include "gf3d_mesh.h"
 #include "gf3d_texture.h"
 #include "gf3d_entity.h"
+#include "plane_entity.h"
 
 typedef struct CEntData_S {
     Entity*         target;
     float           angle;
     float           vangle;
-    float           followHeight;
+    float           followHeigth;
     float           followDist;
     void            (*free)(struct CEntData_S* self);
     GFC_Vector3D    forward;

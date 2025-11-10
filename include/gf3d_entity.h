@@ -111,3 +111,14 @@ Uint8 entity_get_floor_position(Entity* self, World *world, GFC_Vector3D* contac
 
 
 // 	return world_get_floor_position(world, self->position, contact);
+
+
+/*
+* @brief this function checks for sphere-sphere collision between two entities
+ * @param a: the first entity
+ * @param b: the second entity
+ * @param radiusA: the radius of the first entity's sphere
+ * @param radiusB: the radius of the second entity's sphere
+ * @returns 1 if the entities are colliding, 0 otherwise
+*/
+Uint8 entity_sphere_collision(Entity* a, Entity* b, float radiusA, float radiusB);

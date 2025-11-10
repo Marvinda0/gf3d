@@ -44,7 +44,7 @@ Uint8 world_edge_test(World* world, GFC_Vector3D start, GFC_Vector3D end, GFC_Ve
 			t.b = primitive->objData->faceVertices[primitive->objData->outFace[j].verts[1]].vertex; // get vertex b of the triangle
 			t.c = primitive->objData->faceVertices[primitive->objData->outFace[j].verts[2]].vertex	; // get vertex c of the triangle
 			if (gfc_trigfc_angle_edge_test(edge, t, contact)) {
-				//contact->z += 4.9f;
+				contact->z += 4.9f;
 				return 1; // if there is a collision, return 1
 			}
 			
