@@ -11,6 +11,9 @@
 
 static Entity* playerPlane = NULL;
 
+// ============================================================================
+// QUATERNION MATH
+// ============================================================================
 
 GFC_Vector4D quaternion_from_axis_angle(GFC_Vector3D axis, float angle)
 {
@@ -18,23 +21,27 @@ GFC_Vector4D quaternion_from_axis_angle(GFC_Vector3D axis, float angle)
     float halfAngle = angle * 0.5f;
     float s = sin(halfAngle);
 
+    float len = sqrt(axis.x * axis.x + axis.y * axis.y + axis.z * axis.z);
+    if (len > 0.0001f) {
+        axis.x /= len;
+        axis.y /= len;
+        axis.z /= len;
+    }
+
+    q.w = cos(halfAngle);
     q.x = axis.x * s;
     q.y = axis.y * s;
     q.z = axis.z * s;
-    q.w = cos(halfAngle);
-
     return q;
 }
 
 GFC_Vector4D quaternion_multiply(GFC_Vector4D a, GFC_Vector4D b)
 {
     GFC_Vector4D result;
-
     result.w = a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z;
     result.x = a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y;
     result.y = a.w * b.y - a.x * b.z + a.y * b.w + a.z * b.x;
     result.z = a.w * b.z + a.x * b.y - a.y * b.x + a.z * b.w;
-
     return result;
 }
 
@@ -42,17 +49,14 @@ void quaternion_to_vectors(GFC_Vector4D q, GFC_Vector3D* forward, GFC_Vector3D* 
 {
     if (!forward || !right || !up) return;
 
-    // forward vector (0, 1, 0 rotated by quaternion)
     forward->x = 2.0f * (q.x * q.y + q.w * q.z);
     forward->y = 1.0f - 2.0f * (q.x * q.x + q.z * q.z);
     forward->z = 2.0f * (q.y * q.z - q.w * q.x);
 
-    // right vector (1, 0, 0 rotated by quaternion)
     right->x = 1.0f - 2.0f * (q.y * q.y + q.z * q.z);
     right->y = 2.0f * (q.x * q.y - q.w * q.z);
     right->z = 2.0f * (q.x * q.z + q.w * q.y);
 
-    // up vector (0, 0, 1 rotated by quaternion)
     up->x = 2.0f * (q.x * q.z - q.w * q.y);
     up->y = 2.0f * (q.y * q.z + q.w * q.x);
     up->z = 1.0f - 2.0f * (q.x * q.x + q.y * q.y);
@@ -63,7 +67,6 @@ void plane_init_data(PlaneData* data)
     if (!data) return;
 
     data->orientation = gfc_vector4d(0, 0, 0, 1);
-
     data->forward = gfc_vector3d(0, 1, 0);
     data->right = gfc_vector3d(1, 0, 0);
     data->up = gfc_vector3d(0, 0, 1);
@@ -72,28 +75,32 @@ void plane_init_data(PlaneData* data)
     data->yawRate = 0.0f;
     data->rollRate = 0.0f;
 
-    data->yawAngle = 0.0f;
-    data->pitchAngle = 0.0f;
-    data->rollAngle = 0.0f;
+    data->speed = 10.0f;
+    data->targetSpeed = 10.0f;
+    data->acceleration = 0.3f;
+    data->maxSpeed = 25.0f;
+    data->minSpeed = 3.0f;
 
-    data->speed = 5.0f;           
-    data->targetSpeed = 5.0f;
-    data->acceleration = 0.2f;     
-    data->maxSpeed = 20.0f;        
-    data->minSpeed = 2.0f;        
+    data->pitchSensitivity = 0.015f;
+    data->yawSensitivity = 0.012f;
+    data->rollSensitivity = 0.02f;
 
-    data->pitchSensitivity = 0.02f;
-    data->yawSensitivity = 0.02f;
-    data->rollSensitivity = 0.03f;
-
-
-    data->lift = 0.08f;             // how much lift wings generate
-    data->drag = 0.01f;            // air resistance
-    data->gravity = GRAVITY;         // gravity pull
+    data->lift = 0.15f;
+    data->drag = 0.02f;
+    data->gravity = GRAVITY;
 
     data->isStalling = 0;
     data->isInverted = 0;
     data->camera = NULL;
+
+    slog("==============================================");
+    slog("PLANE INITIALIZED");
+    slog("Initial Quaternion: (%.4f, %.4f, %.4f, %.4f)",
+        data->orientation.x, data->orientation.y, data->orientation.z, data->orientation.w);
+    slog("Initial Forward: (%.4f, %.4f, %.4f)", data->forward.x, data->forward.y, data->forward.z);
+    slog("Initial Right: (%.4f, %.4f, %.4f)", data->right.x, data->right.y, data->right.z);
+    slog("Initial Up: (%.4f, %.4f, %.4f)", data->up.x, data->up.y, data->up.z);
+    slog("==============================================");
 }
 
 Entity* plane_spawn(GFC_Vector3D position, GFC_Color color)
@@ -105,22 +112,17 @@ Entity* plane_spawn(GFC_Vector3D position, GFC_Color color)
     }
 
     gfc_line_cpy(self->name, "PlayerPlane");
-
     self->mesh = gf3d_mesh_load("models/plane1/plane1.obj");
-    //self->texture = gf3d_texture_load("models/dino/dino.png"); // replace with plane texture
-
     self->color = color;
     self->position = position;
-    //self->position.z += 100.0f; // start in the air
-
-    self->rotation = gfc_vector3d(0, 0, GFC_PI);
+    self->rotation = gfc_vector3d(0, 0, 0);
     self->velocity = gfc_vector3d(0, 0, 0);
 
     self->bounds = gfc_allocate_array(sizeof(GFC_Box), 1);
     self->bounds->x = position.x;
     self->bounds->y = position.y;
     self->bounds->z = position.z;
-    self->bounds->w = 5.0f; // Collision radius
+    self->bounds->w = 5.0f;
     self->bounds->h = 5.0f;
     self->bounds->d = 5.0f;
 
@@ -139,90 +141,92 @@ Entity* plane_spawn(GFC_Vector3D position, GFC_Color color)
     PlaneData* data = (PlaneData*)self->data;
     plane_init_data(data);
 
-    // place on ground
     GFC_Vector3D groundContact;
     if (entity_get_floor_position(self, get_the_world(), &groundContact)) {
-        self->position.z = groundContact.z;
+        self->position.z = groundContact.z + 30.0f;
     }
 
-    // camera
     GFC_Vector3D camPos = gfc_vector3d(position.x, position.y - 30, position.z + 15);
     Entity* cam = camera_entity_spawn(camPos, self);
     if (cam) {
         data->camera = cam;
-        slog("Camera attached to plane");
-    }
-    else {
-        slog("Warning: Failed to spawn camera for plane");
     }
 
     playerPlane = self;
-    slog("Plane spawned at (%.1f, %.1f, %.1f)", position.x, position.y, position.z);
-
     return self;
 }
-
 
 void plane_handle_controls(Entity* self)
 {
     if (!self || !self->data) return;
-
     PlaneData* data = (PlaneData*)self->data;
 
-    if (gfc_input_command_down("pitch_up")) {        
-        data->pitchAngle += data->pitchSensitivity;
-        slog("PITCH UP");
+    int inputDetected = 0;
+
+    // LOG INPUT
+    if (gfc_input_command_down("pitch_up")) {
+        slog(">>> INPUT: PITCH_UP (W key)");
+        data->pitchRate = data->pitchSensitivity;
+        inputDetected = 1;
     }
-    if (gfc_input_command_down("pitch_down")) {     
-        data->pitchAngle -= data->pitchSensitivity;
-        slog("PITCH DOWN");
+    else if (gfc_input_command_down("pitch_down")) {
+        slog(">>> INPUT: PITCH_DOWN (S key)");
+        data->pitchRate = -data->pitchSensitivity;
+        inputDetected = 1;
+    }
+    else {
+        data->pitchRate *= 0.96f;
     }
 
-    if (gfc_input_command_down("roll_left")) {       
-        data->rollAngle += data->rollSensitivity;
-        slog("ROLL LEFT");
+    if (gfc_input_command_down("roll_left")) {
+        slog(">>> INPUT: ROLL_LEFT (A key)");
+        data->rollRate = data->rollSensitivity;
+        inputDetected = 1;
     }
-    if (gfc_input_command_down("roll_right")) {       
-        data->rollAngle -= data->rollSensitivity;
-        slog("ROLL RIGHT");
+    else if (gfc_input_command_down("roll_right")) {
+        slog(">>> INPUT: ROLL_RIGHT (D key)");
+        data->rollRate = -data->rollSensitivity;
+        inputDetected = 1;
     }
-
-    if (gfc_input_command_down("turn_left")) {         
-        data->yawAngle += data->yawSensitivity;
-    }
-    if (gfc_input_command_down("turn_right")) {       
-        data->yawAngle -= data->yawSensitivity;
+    else {
+        data->rollRate *= 0.96f;
     }
 
-    if (gfc_input_command_down("throttle_up")) {           
+    if (gfc_input_command_down("turn_left")) {
+        slog(">>> INPUT: TURN_LEFT (Left Arrow)");
+        data->yawRate = data->yawSensitivity;
+        inputDetected = 1;
+    }
+    else if (gfc_input_command_down("turn_right")) {
+        slog(">>> INPUT: TURN_RIGHT (Right Arrow)");
+        data->yawRate = -data->yawSensitivity;
+        inputDetected = 1;
+    }
+    else {
+        data->yawRate *= 0.96f;
+    }
+
+    if (gfc_input_command_down("throttle_up")) {
         data->targetSpeed += 0.3f;
-        if (data->targetSpeed > data->maxSpeed) {
-            data->targetSpeed = data->maxSpeed;
-        }
+        if (data->targetSpeed > data->maxSpeed) data->targetSpeed = data->maxSpeed;
     }
-    if (gfc_input_command_down("throttle_down")) {         
+    if (gfc_input_command_down("throttle_down")) {
         data->targetSpeed -= 0.3f;
-        if (data->targetSpeed < data->minSpeed) {
-            data->targetSpeed = data->minSpeed;
-        }
+        if (data->targetSpeed < data->minSpeed) data->targetSpeed = data->minSpeed;
     }
-
-    //DAMPING (prevent endless spinning)
-    data->pitchRate *= 0.85f; 
-    data->rollRate *= 0.85f;
-    data->yawRate *= 0.85f;
 
     // Clamp rates
-    float maxPitchRate = 0.04f;  
-    float maxRollRate = 0.05f;  
-    float maxYawRate = 0.03f;
+    if (data->pitchRate > 0.04f) data->pitchRate = 0.04f;
+    if (data->pitchRate < -0.04f) data->pitchRate = -0.04f;
+    if (data->rollRate > 0.05f) data->rollRate = 0.05f;
+    if (data->rollRate < -0.05f) data->rollRate = -0.05f;
+    if (data->yawRate > 0.03f) data->yawRate = 0.03f;
+    if (data->yawRate < -0.03f) data->yawRate = -0.03f;
 
-    if (data->pitchRate > maxPitchRate) data->pitchRate = maxPitchRate;
-    if (data->pitchRate < -maxPitchRate) data->pitchRate = -maxPitchRate;
-    if (data->rollRate > maxRollRate) data->rollRate = maxRollRate;
-    if (data->rollRate < -maxRollRate) data->rollRate = -maxRollRate;
-    if (data->yawRate > maxYawRate) data->yawRate = maxYawRate;
-    if (data->yawRate < -maxYawRate) data->yawRate = -maxYawRate;
+    if (inputDetected) {
+        slog("Current Rates - Pitch: %.5f, Roll: %.5f, Yaw: %.5f",
+            data->pitchRate, data->rollRate, data->yawRate);
+    }
 }
 
 void plane_update_orientation(Entity* self)
@@ -230,39 +234,141 @@ void plane_update_orientation(Entity* self)
     if (!self || !self->data) return;
     PlaneData* data = (PlaneData*)self->data;
 
-    // Build orientation from stable Euler angles
-    GFC_Vector4D qYaw   = quaternion_from_axis_angle(gfc_vector3d(0, 0, 1), data->yawAngle);
-    GFC_Vector4D qPitch = quaternion_from_axis_angle(gfc_vector3d(1, 0, 0), data->pitchAngle);
-    GFC_Vector4D qRoll  = quaternion_from_axis_angle(gfc_vector3d(0, 1, 0), data->rollAngle);
+    // Check if any rotation is happening
+    int hasRotation = (fabs(data->pitchRate) > 0.0001f ||
+        fabs(data->rollRate) > 0.0001f ||
+        fabs(data->yawRate) > 0.0001f);
 
-    // Combine yaw  pitch  roll
-    data->orientation = quaternion_multiply(qYaw, qPitch);
-    data->orientation = quaternion_multiply(data->orientation, qRoll);
+    if (!hasRotation) return;
 
-    // Extract vectors
-    quaternion_to_vectors(data->orientation, &data->forward, &data->right, &data->up);
+    slog("----------------------------------------------");
+    slog("BEFORE ORIENTATION UPDATE:");
+    slog("  Quaternion: (%.4f, %.4f, %.4f, %.4f)",
+        data->orientation.x, data->orientation.y, data->orientation.z, data->orientation.w);
+    slog("  Forward: (%.4f, %.4f, %.4f)", data->forward.x, data->forward.y, data->forward.z);
+    slog("  Right: (%.4f, %.4f, %.4f)", data->right.x, data->right.y, data->right.z);
+    slog("  Up: (%.4f, %.4f, %.4f)", data->up.x, data->up.y, data->up.z);
 
-    // Normalize
-    gfc_vector3d_normalize(&data->forward);
-    gfc_vector3d_normalize(&data->right);
-    gfc_vector3d_normalize(&data->up);
+    // 1. PITCH
+    if (fabs(data->pitchRate) > 0.0001f) {
+        slog("--- APPLYING PITCH (%.5f rad) around RIGHT axis ---", data->pitchRate);
+        slog("  Right axis: (%.4f, %.4f, %.4f)", data->right.x, data->right.y, data->right.z);
 
-    // Update Euler angles for rendering
-    self->rotation.z = data->yawAngle;
-    self->rotation.x = data->pitchAngle;
-    self->rotation.y = data->rollAngle;
+        GFC_Vector4D qPitch = quaternion_from_axis_angle(data->right, data->pitchRate);
+        slog("  Pitch quaternion: (%.4f, %.4f, %.4f, %.4f)", qPitch.x, qPitch.y, qPitch.z, qPitch.w);
+
+        data->orientation = quaternion_multiply(qPitch, data->orientation);
+        slog("  After multiply: (%.4f, %.4f, %.4f, %.4f)",
+            data->orientation.x, data->orientation.y, data->orientation.z, data->orientation.w);
+
+        // Normalize
+        float mag = sqrt(data->orientation.w * data->orientation.w +
+            data->orientation.x * data->orientation.x +
+            data->orientation.y * data->orientation.y +
+            data->orientation.z * data->orientation.z);
+        if (mag > 0.0001f) {
+            data->orientation.w /= mag;
+            data->orientation.x /= mag;
+            data->orientation.y /= mag;
+            data->orientation.z /= mag;
+        }
+        slog("  After normalize: (%.4f, %.4f, %.4f, %.4f)",
+            data->orientation.x, data->orientation.y, data->orientation.z, data->orientation.w);
+
+        quaternion_to_vectors(data->orientation, &data->forward, &data->right, &data->up);
+        slog("  New Forward: (%.4f, %.4f, %.4f)", data->forward.x, data->forward.y, data->forward.z);
+        slog("  New Right: (%.4f, %.4f, %.4f)", data->right.x, data->right.y, data->right.z);
+        slog("  New Up: (%.4f, %.4f, %.4f)", data->up.x, data->up.y, data->up.z);
+    }
+
+    // 2. ROLL
+    if (fabs(data->rollRate) > 0.0001f) {
+        slog("--- APPLYING ROLL (%.5f rad) around FORWARD axis ---", data->rollRate);
+        slog("  Forward axis: (%.4f, %.4f, %.4f)", data->forward.x, data->forward.y, data->forward.z);
+
+        GFC_Vector4D qRoll = quaternion_from_axis_angle(data->forward, data->rollRate);
+        slog("  Roll quaternion: (%.4f, %.4f, %.4f, %.4f)", qRoll.x, qRoll.y, qRoll.z, qRoll.w);
+
+        data->orientation = quaternion_multiply(qRoll, data->orientation);
+        slog("  After multiply: (%.4f, %.4f, %.4f, %.4f)",
+            data->orientation.x, data->orientation.y, data->orientation.z, data->orientation.w);
+
+        float mag = sqrt(data->orientation.w * data->orientation.w +
+            data->orientation.x * data->orientation.x +
+            data->orientation.y * data->orientation.y +
+            data->orientation.z * data->orientation.z);
+        if (mag > 0.0001f) {
+            data->orientation.w /= mag;
+            data->orientation.x /= mag;
+            data->orientation.y /= mag;
+            data->orientation.z /= mag;
+        }
+        slog("  After normalize: (%.4f, %.4f, %.4f, %.4f)",
+            data->orientation.x, data->orientation.y, data->orientation.z, data->orientation.w);
+
+        quaternion_to_vectors(data->orientation, &data->forward, &data->right, &data->up);
+        slog("  New Forward: (%.4f, %.4f, %.4f)", data->forward.x, data->forward.y, data->forward.z);
+        slog("  New Right: (%.4f, %.4f, %.4f)", data->right.x, data->right.y, data->right.z);
+        slog("  New Up: (%.4f, %.4f, %.4f)", data->up.x, data->up.y, data->up.z);
+    }
+
+    // 3. YAW
+    if (fabs(data->yawRate) > 0.0001f) {
+        slog("--- APPLYING YAW (%.5f rad) around UP axis ---", data->yawRate);
+        slog("  Up axis: (%.4f, %.4f, %.4f)", data->up.x, data->up.y, data->up.z);
+
+        GFC_Vector4D qYaw = quaternion_from_axis_angle(data->up, data->yawRate);
+        slog("  Yaw quaternion: (%.4f, %.4f, %.4f, %.4f)", qYaw.x, qYaw.y, qYaw.z, qYaw.w);
+
+        data->orientation = quaternion_multiply(qYaw, data->orientation);
+        slog("  After multiply: (%.4f, %.4f, %.4f, %.4f)",
+            data->orientation.x, data->orientation.y, data->orientation.z, data->orientation.w);
+
+        float mag = sqrt(data->orientation.w * data->orientation.w +
+            data->orientation.x * data->orientation.x +
+            data->orientation.y * data->orientation.y +
+            data->orientation.z * data->orientation.z);
+        if (mag > 0.0001f) {
+            data->orientation.w /= mag;
+            data->orientation.x /= mag;
+            data->orientation.y /= mag;
+            data->orientation.z /= mag;
+        }
+        slog("  After normalize: (%.4f, %.4f, %.4f, %.4f)",
+            data->orientation.x, data->orientation.y, data->orientation.z, data->orientation.w);
+
+        quaternion_to_vectors(data->orientation, &data->forward, &data->right, &data->up);
+        slog("  New Forward: (%.4f, %.4f, %.4f)", data->forward.x, data->forward.y, data->forward.z);
+        slog("  New Right: (%.4f, %.4f, %.4f)", data->right.x, data->right.y, data->right.z);
+        slog("  New Up: (%.4f, %.4f, %.4f)", data->up.x, data->up.y, data->up.z);
+    }
+
+    slog("FINAL ORIENTATION:");
+    slog("  Quaternion: (%.4f, %.4f, %.4f, %.4f)",
+        data->orientation.x, data->orientation.y, data->orientation.z, data->orientation.w);
+    slog("  Forward: (%.4f, %.4f, %.4f)", data->forward.x, data->forward.y, data->forward.z);
+    slog("  Right: (%.4f, %.4f, %.4f)", data->right.x, data->right.y, data->right.z);
+    slog("  Up: (%.4f, %.4f, %.4f)", data->up.x, data->up.y, data->up.z);
+    slog("----------------------------------------------");
+
+    // Convert to Euler for rendering
+    float sinr = 2.0f * (data->orientation.w * data->orientation.x + data->orientation.y * data->orientation.z);
+    float cosr = 1.0f - 2.0f * (data->orientation.x * data->orientation.x + data->orientation.y * data->orientation.y);
+    self->rotation.x = atan2(sinr, cosr);
+
+    float sinp = 2.0f * (data->orientation.w * data->orientation.y - data->orientation.z * data->orientation.x);
+    self->rotation.y = (fabs(sinp) >= 1.0f) ? copysign(GFC_PI / 2.0f, sinp) : asin(sinp);
+
+    float siny = 2.0f * (data->orientation.w * data->orientation.z + data->orientation.x * data->orientation.y);
+    float cosy = 1.0f - 2.0f * (data->orientation.y * data->orientation.y + data->orientation.z * data->orientation.z);
+    self->rotation.z = atan2(siny, cosy);
 }
-
-
-
 
 void plane_apply_physics(Entity* self)
 {
     if (!self || !self->data) return;
-
     PlaneData* data = (PlaneData*)self->data;
 
-    // smoothly adjust speed toward target speed
     if (data->speed < data->targetSpeed) {
         data->speed += data->acceleration;
         if (data->speed > data->targetSpeed) data->speed = data->targetSpeed;
@@ -272,94 +378,56 @@ void plane_apply_physics(Entity* self)
         if (data->speed < data->targetSpeed) data->speed = data->targetSpeed;
     }
 
-    // Check for stall
     data->isStalling = (data->speed < data->minSpeed);
-    if (data->isStalling) {
-        slog("WARNING: STALLING!");
-    }
 
-    //velocity
-    GFC_Vector3D forwardVelocity;
-    gfc_vector3d_scale(forwardVelocity, data->forward, data->speed);
-    self->velocity = forwardVelocity;
+    GFC_Vector3D thrust;
+    gfc_vector3d_scale(thrust, data->forward, data->speed);
 
-    //lift 
-    float speedRatio = data->speed / data->maxSpeed;
-    float liftForce = data->lift * (0.5f + speedRatio * 0.5f);
+    float liftAmount = data->lift * data->speed * 0.5f;
+    if (data->isStalling) liftAmount *= 0.2f;
+    GFC_Vector3D lift;
+    gfc_vector3d_scale(lift, data->up, liftAmount);
 
-    GFC_Vector3D liftVector;
-    gfc_vector3d_scale(liftVector, data->up, liftForce);
-    gfc_vector3d_add(self->velocity, self->velocity, liftVector);
+    GFC_Vector3D drag;
+    gfc_vector3d_scale(drag, data->forward, -data->drag * data->speed);
 
-    //drag
-    GFC_Vector3D dragVector;
-    gfc_vector3d_scale(dragVector, data->forward, -data->drag * data->speed);
-    gfc_vector3d_add(self->velocity, self->velocity, dragVector);
-    /*NO GRAVITY FOR NOW
-    //gravity
-    self->velocity.z += data->gravity;
+    GFC_Vector3D gravity = gfc_vector3d(0, 0, data->gravity);
 
-    // If stalling, reduce lift significantly
-    if (data->isStalling) {
-        self->velocity.z += data->gravity * 2.0f; // Fall faster when stalling
-    }*/
+    self->velocity = thrust;
+    gfc_vector3d_add(self->velocity, self->velocity, lift);
+    gfc_vector3d_add(self->velocity, self->velocity, drag);
+    gfc_vector3d_add(self->velocity, self->velocity, gravity);
 }
 
 void plane_think(Entity* self)
 {
     if (!self) return;
-
-    slog("plane_think START");
-
     plane_handle_controls(self);
-
-    PlaneData* data = (PlaneData*)self->data;
-    if (data) {
-        slog("Speed: %.1f, Pitch: %.3f, Roll: %.3f, Yaw: %.3f",
-            data->speed, data->pitchRate, data->rollRate, data->yawRate);
-    }
 }
 
 void plane_update(Entity* self)
 {
-    slog(">>> BEFORE PHYSICS: pos=(%.2f, %.2f, %.2f) forward.z=%.2f up.z=%.2f",
-        self->position.x, self->position.y, self->position.z,
-        ((PlaneData*)self->data)->forward.z,
-        ((PlaneData*)self->data)->up.z);
     if (!self) return;
 
-    slog("plane_update START: pos=(%.2f, %.2f, %.2f)",
-        self->position.x, self->position.y, self->position.z);
-
     plane_update_orientation(self);
-
     plane_apply_physics(self);
-    slog(">>> AFTER PHYSICS: vel=(%.2f, %.2f, %.2f) pos=(%.2f, %.2f, %.2f)",
-        self->velocity.x, self->velocity.y, self->velocity.z,
-        self->position.x, self->position.y, self->position.z);
-
-
     gfc_vector3d_add(self->position, self->position, self->velocity);
 
-    //(bounce off ground)
     GFC_Vector3D groundContact;
     if (entity_get_floor_position(self, get_the_world(), &groundContact)) {
-        if (self->position.z < groundContact.z) {
-            self->position.z = groundContact.z;
-            // TODO:Bounce logic here
-            slog("GROUND CONTACT!");
+        if (self->position.z < groundContact.z + 2.0f) {
+            self->position.z = groundContact.z + 2.0f;
+            if (self->velocity.z < 0) {
+                self->velocity.z = -self->velocity.z * 0.3f;
+            }
         }
     }
 
-    // Update bounding box
     if (self->bounds) {
         self->bounds->x = self->position.x;
         self->bounds->y = self->position.y;
         self->bounds->z = self->position.z;
     }
-
-    slog("plane_update END: pos=(%.2f, %.2f, %.2f)",
-        self->position.x, self->position.y, self->position.z);
 }
 
 void plane_free(Entity* self)
@@ -376,13 +444,11 @@ Entity* plane_get_player()
     return playerPlane;
 }
 
-
 GFC_Vector3D plane_get_forward()
 {
     if (!playerPlane || !playerPlane->data) {
-        return gfc_vector3d(0, 1, 0); // Default forward
+        return gfc_vector3d(0, 1, 0);
     }
-
     PlaneData* data = (PlaneData*)playerPlane->data;
     return data->forward;
 }
