@@ -102,6 +102,8 @@ void world_draw(World *world)
 	GFC_Matrix4 modelMat;
 	if (!world) return;
 	gfc_matrix4_identity(modelMat);
+	//scale the world
+	gfc_matrix4_multiply_scalar(modelMat, modelMat, 10);
 	gf3d_mesh_draw(world->mesh, modelMat, GFC_COLOR_WHITE, world->Texture, world->lightpos, world->lightcolor);
 }
 

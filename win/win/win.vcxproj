@@ -171,7 +171,9 @@
     <ClInclude Include="..\..\gfc\simple_json\include\simple_json_types.h" />
     <ClInclude Include="..\..\gfc\simple_json\include\simple_json_value.h" />
     <ClInclude Include="..\..\gfc\simple_logger\include\simple_logger.h" />
+    <ClInclude Include="..\..\include\bullet_entity.h" />
     <ClInclude Include="..\..\include\camera_entity.h" />
+    <ClInclude Include="..\..\include\enemy_entity.h" />
     <ClInclude Include="..\..\include\gf2d_actor.h" />
     <ClInclude Include="..\..\include\gf2d_camera.h" />
     <ClInclude Include="..\..\include\gf2d_font.h" />
@@ -198,6 +200,7 @@
     <ClInclude Include="..\..\include\gf3d_vqueues.h" />
     <ClInclude Include="..\..\include\monster.h" />
     <ClInclude Include="..\..\include\plane_entity.h" />
+    <ClInclude Include="..\..\include\weapon_system.h" />
     <ClInclude Include="..\..\include\world.h" />
   </ItemGroup>
   <ItemGroup>
@@ -229,7 +232,9 @@
     <ClCompile Include="..\..\gfc\src\gfc_types.c" />
     <ClCompile Include="..\..\gfc\src\gfc_vector.c" />
     <ClCompile Include="..\..\gfc\src\miniz.c" />
+    <ClCompile Include="..\..\src\bullet_entity.c" />
     <ClCompile Include="..\..\src\camera_entity.c" />
+    <ClCompile Include="..\..\src\enemy_entity.c" />
     <ClCompile Include="..\..\src\game.c" />
     <ClCompile Include="..\..\src\gf2d_actor.c" />
     <ClCompile Include="..\..\src\gf2d_camera.c" />
@@ -257,6 +262,7 @@
     <ClCompile Include="..\..\src\gf3d_vqueues.c" />
     <ClCompile Include="..\..\src\monster.c" />
     <ClCompile Include="..\..\src\plane_entity.c" />
+    <ClCompile Include="..\..\src\weapon_system.c" />
     <ClCompile Include="..\..\src\world.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

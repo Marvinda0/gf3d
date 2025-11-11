@@ -113,6 +113,7 @@ int main(int argc, char* argv[])
 
         //2D draws
         gf2d_font_draw_line_tag("WASD to move, Arrows to pan camera", FT_H1, GFC_COLOR_WHITE, gfc_vector2d(10, 10));
+        gf2d_font_draw_line_tag("+", FT_H1, GFC_COLOR_RED, gfc_vector2d(640, 360)); 
         gf2d_mouse_draw();
         gf3d_vgraphics_render_end();
 

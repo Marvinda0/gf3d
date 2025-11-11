@@ -5,6 +5,7 @@
 #include "world.h"
 #include "plane_entity.h"
 #include "gfc_matrix.h"
+#include "weapon_system.h"
 #include <math.h>
 
 #define GRAVITY -0.2f
@@ -140,6 +141,8 @@ Entity* plane_spawn(GFC_Vector3D position, GFC_Color color)
 
     PlaneData* data = (PlaneData*)self->data;
     plane_init_data(data);
+    weapon_loadout_init(&data->loadout, WEAPON_MACHINE_GUN, 0,0);
+
 
     GFC_Vector3D groundContact;
     if (entity_get_floor_position(self, get_the_world(), &groundContact)) {
@@ -214,6 +217,10 @@ void plane_handle_controls(Entity* self)
         data->targetSpeed -= 0.3f;
         if (data->targetSpeed < data->minSpeed) data->targetSpeed = data->minSpeed;
     }
+    
+    //Weapons
+    if (gfc_input_command_down("space"))
+        weapon_fire(self, 0);
 
     // Clamp rates
     if (data->pitchRate > 0.04f) data->pitchRate = 0.04f;
@@ -409,9 +416,12 @@ void plane_update(Entity* self)
 {
     if (!self) return;
 
+    float dt = 1.0f / 60.0f;
+    weapon_update_cooldowns(&((PlaneData*)self->data)->loadout, dt);   // TODO: Change Dt to use SDL ticks
     plane_update_orientation(self);
     plane_apply_physics(self);
     gfc_vector3d_add(self->position, self->position, self->velocity);
+
 
     GFC_Vector3D groundContact;
     if (entity_get_floor_position(self, get_the_world(), &groundContact)) {

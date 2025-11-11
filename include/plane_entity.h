@@ -5,6 +5,7 @@
 #include "gfc_types.h"
 #include "gfc_vector.h"
 #include "gfc_matrix.h"
+#include "weapon_system.h"
 
 typedef struct
 {
@@ -36,6 +37,8 @@ typedef struct
     float lift;              // Upward force from wings
     float drag;              // Air resistance
     float gravity;           // Downward force
+
+    WeaponLoadout loadout;    // Plane's weapons
 
     Entity* camera;
 
