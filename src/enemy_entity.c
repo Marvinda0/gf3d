@@ -22,62 +22,62 @@ Entity* enemy_spawn(GFC_Vector3D pos, EnemyType type, Entity* target)
     {
     case ENEMY_LIGHT_TURRET:
         gfc_line_cpy(self->name, "Light Turret");
-        e->health = 50;
+        e->health = 40;
         e->maxHealth = 50;
         e->speed = 0;
         e->fireRate = 0.8f;
         weapon_loadout_init(&e->loadout, WEAPON_MACHINE_GUN, 0, 0);
         e->modelPath = "models/enemies/turret.obj";
         e->color = GFC_COLOR_WHITE;
-        e->scale = gfc_vector3d(1.0f, 1.0f, 1.0f);
+        e->scale = gfc_vector3d(3.0f, 3.0f, 3.0f);
         break;
 
     case ENEMY_HEAVY_TURRET:
         gfc_line_cpy(self->name, "Heavy Turret");
-        e->health = 150;
+        e->health = 40;
         e->maxHealth = 150;
         e->speed = 0;
         e->fireRate = 2.0f;
         weapon_loadout_init(&e->loadout, WEAPON_MISSILE, 0, 0);
         e->modelPath = "models/enemies/turret.obj";
         e->color = GFC_COLOR_RED;
-        e->scale = gfc_vector3d(2.0f, 2.0f, 2.0f);
+        e->scale = gfc_vector3d(5.0f, 5.0f, 5.0f);
         break;
 
     case ENEMY_FIGHTER:
         gfc_line_cpy(self->name, "Fighter");
         e->health = 60;
         e->maxHealth = 60;
-        e->speed = 60.0f;  // Units per second
+        e->speed = 45.0f;  // Units per second
         e->fireRate = 1.0f;
         weapon_loadout_init(&e->loadout, WEAPON_MACHINE_GUN, 0, 0);
-        e->modelPath = "models/enemies/enemy_plane.obj";
+        e->modelPath = "models/plane1/plane1.obj";
         e->color = GFC_COLOR_WHITE;
-        e->scale = gfc_vector3d(1.0f, 1.0f, 1.0f);
+        e->scale = gfc_vector3d(4.0f, 4.0f, 4.0f);
         break;
 
     case ENEMY_BOMBER:
         gfc_line_cpy(self->name, "Bomber");
         e->health = 120;
         e->maxHealth = 120;
-        e->speed = 40.0f;
+        e->speed = 30.0f;
         e->fireRate = 2.5f;
         weapon_loadout_init(&e->loadout, WEAPON_MISSILE, 0, 0);
-        e->modelPath = "models/enemies/enemy_plane.obj";
+        e->modelPath = "models/plane1/plane1.obj";
         e->color = GFC_COLOR_BLUE;
-        e->scale = gfc_vector3d(1.5f, 1.5f, 1.5f);
+        e->scale = gfc_vector3d(5.f, 5.f, 5.f);
         break;
 
     case ENEMY_INTERCEPTOR:
         gfc_line_cpy(self->name, "Interceptor");
         e->health = 40;
         e->maxHealth = 40;
-        e->speed = 90.0f;
+        e->speed = 60.0f;
         e->fireRate = 1.2f;
         weapon_loadout_init(&e->loadout, WEAPON_HOMING, 0, 0);
-        e->modelPath = "models/enemies/enemy_plane.obj";
+        e->modelPath = "models/plane1/plane1.obj";
         e->color = GFC_COLOR_YELLOW;
-        e->scale = gfc_vector3d(0.8f, 0.8f, 0.8f);
+        e->scale = gfc_vector3d(3.f, 3.f, 3.f);
         break;
     }
 

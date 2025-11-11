@@ -43,8 +43,8 @@ void exitGame()
 int main(int argc, char* argv[])
 {
     //local variables
-    GFC_Vector3D lightPos = { 0,500,500 };  // FIXED: Much brighter light position
-    GFC_Color lightColor = { 1,1,1,1 };
+    GFC_Vector3D lightPos = { 300, 300, 300 }; 
+    GFC_Color lightColor = { 1.5, 1.5, 1.5, 1 };
     GFC_Matrix4 id, terrainMat;
     GFC_Vector3D spawnPos = gfc_vector3d(0, 0, 100);
 

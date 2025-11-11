@@ -8,50 +8,74 @@
 
 void camera_entity_think(Entity* self)
 {
-    if ((!self) || (!self->data)) return;
+    if (!self || !self->data) return;
 
-    CameraEntityData* data = self->data;
+    CameraEntityData* data = (CameraEntityData*)self->data;
     if (!data->target) return;
 
     PlaneData* planeData = (PlaneData*)data->target->data;
     if (!planeData) return;
 
-    // Get forward and up vectors from plane's quaternion
-    GFC_Vector3D forward, up;
+    // Base direction vectors from plane orientation
+    GFC_Vector3D forward, up, right;
     quaternion_rotate_v(&forward, planeData->orientation, gfc_vector3d(0, 1, 0));
     quaternion_rotate_v(&up, planeData->orientation, gfc_vector3d(0, 0, 1));
+    quaternion_rotate_v(&right, planeData->orientation, gfc_vector3d(1, 0, 0));
 
-    // Calculate camera position behind and above plane
-    GFC_Vector3D followBehindVec, followHeightVec;
-    GFC_Vector3D cameraPos;
+    // --- Handle camera orbit input ---
+    static float yawOffset = 0.0f; // angle offset from default view (radians)
+    float targetOffset = 0.0f;     // desired offset angle
+    float dt = 1.0f / 60.0f;
 
-    gfc_vector3d_scale(followBehindVec, forward, -data->followDist);
-    gfc_vector3d_scale(followHeightVec, up, data->followHeigth);
+    if (gfc_input_command_down("camera_left")) {
+        targetOffset = 0.4f;   // rotate left
+    }
+    else if (gfc_input_command_down("camera_right")) {
+        targetOffset = -0.4f;  // rotate right
+    }
 
-    gfc_vector3d_copy(cameraPos, data->target->position);
-    gfc_vector3d_add(cameraPos, cameraPos, followBehindVec);
-    gfc_vector3d_add(cameraPos, cameraPos, followHeightVec);
+    // Smoothly blend toward target offset
+    yawOffset += (targetOffset - yawOffset) * 0.1f;
 
-    // Smooth camera movement
-    float smoothFactor = 0.15f;
-    self->position.x = self->position.x + (cameraPos.x - self->position.x) * smoothFactor;
-    self->position.y = self->position.y + (cameraPos.y - self->position.y) * smoothFactor;
-    self->position.z = self->position.z + (cameraPos.z - self->position.z) * smoothFactor;
+    // --- Compute orbit direction manually using trig ---
+    // Base "behind" direction is -forward (we stay behind the plane)
+    GFC_Vector3D behind = gfc_vector3d(-forward.x, -forward.y, -forward.z);
 
-    // Prevent camera from going below terrain
+    // Apply horizontal rotation using sin/cos
+    GFC_Vector3D orbitDir;
+    orbitDir.x = behind.x * cosf(yawOffset) + right.x * sinf(yawOffset);
+    orbitDir.y = behind.y * cosf(yawOffset) + right.y * sinf(yawOffset);
+    orbitDir.z = behind.z * cosf(yawOffset) + right.z * sinf(yawOffset);
+    gfc_vector3d_normalize(&orbitDir);
+
+    // Compute final camera position: behind + above + orbit
+    GFC_Vector3D cameraPos = data->target->position;
+    GFC_Vector3D backOffset, heightOffset;
+    gfc_vector3d_scale(backOffset, orbitDir, data->followDist);
+    gfc_vector3d_scale(heightOffset, up, data->followHeigth);
+    gfc_vector3d_add(cameraPos, cameraPos, backOffset);
+    gfc_vector3d_add(cameraPos, cameraPos, heightOffset);
+
+    // Smooth camera follow movement
+    float smooth = 0.15f;
+    self->position.x += (cameraPos.x - self->position.x) * smooth;
+    self->position.y += (cameraPos.y - self->position.y) * smooth;
+    self->position.z += (cameraPos.z - self->position.z) * smooth;
+
+    // Prevent going below terrain
     GFC_Vector3D groundContact;
     if (entity_get_floor_position(data->target, get_the_world(), &groundContact)) {
         float minHeight = groundContact.z + 5.0f;
-        if (self->position.z < minHeight) {
-            self->position.z = minHeight;
-        }
+        if (self->position.z < minHeight) self->position.z = minHeight;
     }
 
-    // Set camera position and rotation
+    // Apply final camera position & rotation
     gf3d_camera_set_position(self->position);
     gf3d_camera_set_rotation_q(planeData->orientation);
     gf3d_camera_update_view_q();
 }
+
+
 
 Entity* camera_entity_spawn(GFC_Vector3D position, Entity* target)
 {

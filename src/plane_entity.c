@@ -43,8 +43,8 @@ void plane_init_data(PlaneData* data)
     data->isStalling = 0;
     data->camera = NULL;
 
-    data->health = 100;
-    data->maxHealth = 100;
+    data->health = 500;
+    data->maxHealth = 500;
 
     // Initialize weapon loadout
     weapon_loadout_init(&data->loadout, WEAPON_MACHINE_GUN, WEAPON_MISSILE, WEAPON_HOMING);
@@ -187,10 +187,10 @@ void plane_handle_controls(Entity* self)
     if (gfc_input_command_pressed("space")) {
         weapon_fire(self, 0);  // Fire primary weapon
     }
-    if (gfc_input_command_pressed("fire_secondary")) {
+    if (gfc_input_command_pressed("missile")) {
         weapon_fire(self, 1);  // Fire secondary weapon
     }
-    if (gfc_input_command_pressed("fire_tertiary")) {
+    if (gfc_input_command_pressed("homing")) {
         weapon_fire(self, 2);  // Fire tertiary weapon
     }
 }
