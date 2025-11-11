@@ -2,6 +2,7 @@
 #define __GF3D_CAMERA_H__
 
 #include "gfc_matrix.h"
+#include "quaternion.h"
 
 typedef struct
 {
@@ -19,6 +20,7 @@ typedef struct
     GFC_Vector3D    forward;            //unit vector pointing in the forward direction relative to the camera
     GFC_Vector3D    right;              //unit vector pointing in the right direction relative to the camera
     GFC_Vector3D    up;                 //unit vector pointing in the up direction relative to the camera
+    Quaternion qRotation;		        //quaternion representing camera rotation
 }Camera;
 
 /**
@@ -27,6 +29,16 @@ typedef struct
  */
 void gf3d_camera_update_view();
 
+/**
+ * @brief set the current camera rotation based on a quaternion
+ * @param rotation the quaternion to set the camera rotation to
+ */
+void gf3d_camera_set_rotation_q(Quaternion rotation);
+
+/**
+ * @brief update the camera view matrix based on the current position and quaternion rotation
+ */
+void gf3d_camera_update_view_q();
 /**
  * @brief get the current camera view
  * @param view output, the matrix provided will be populated with the current camera information

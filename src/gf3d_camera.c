@@ -41,6 +41,49 @@ void gf3d_camera_update_view()
     gf3d_vgraphics_set_view(gf3d_camera.cameraMat);
 }
 
+void gf3d_camera_set_rotation_q(Quaternion rotation) {
+    gf3d_camera.qRotation = rotation;
+}
+
+void gf3d_camera_update_view_q() //This Function is from "adorioan" on GitHub
+{
+    GFC_Vector3D right, up, forward;
+    GFC_Vector3D position = gf3d_camera.position;
+
+    // Build orientation basis from quaternion
+    GFC_Vector3D localRight = gfc_vector3d(1, 0, 0);
+    GFC_Vector3D localUp = gfc_vector3d(0, 0, 1);  // Z-up
+    GFC_Vector3D localForward = gfc_vector3d(0, 1, 0);  // +Y forward
+
+    quaternion_rotate_v(&right, gf3d_camera.qRotation, localRight);
+    quaternion_rotate_v(&up, gf3d_camera.qRotation, localUp);
+    quaternion_rotate_v(&forward, gf3d_camera.qRotation, localForward);
+
+    // Initialize view matrix
+    gfc_matrix4_identity(gf3d_camera.cameraMat);
+
+    // Orientation (transpose of rotation matrix)
+    gf3d_camera.cameraMat[0][0] = right.x;
+    gf3d_camera.cameraMat[1][0] = right.y;
+    gf3d_camera.cameraMat[2][0] = right.z;
+
+    gf3d_camera.cameraMat[0][1] = up.x;
+    gf3d_camera.cameraMat[1][1] = up.y;
+    gf3d_camera.cameraMat[2][1] = up.z;
+
+    gf3d_camera.cameraMat[0][2] = -forward.x;
+    gf3d_camera.cameraMat[1][2] = -forward.y;
+    gf3d_camera.cameraMat[2][2] = -forward.z;
+
+    // Translation (negative dot with position)
+    gf3d_camera.cameraMat[3][0] = gfc_vector3d_dot_product(right, position);
+    gf3d_camera.cameraMat[3][1] = gfc_vector3d_dot_product(up, position);
+    gf3d_camera.cameraMat[3][2] = -gfc_vector3d_dot_product(forward, position); // note the sign flip
+
+    // Send to graphics
+    gf3d_vgraphics_set_view(gf3d_camera.cameraMat);
+}
+
 GFC_Vector3D gf3d_camera_get_position()
 {
     GFC_Vector3D position;

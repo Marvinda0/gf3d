@@ -102,9 +102,6 @@ int main(int argc, char* argv[])
         entity_think_all();
         entity_update_all();
 
-        //camera updates
-        gf3d_camera_update_view();
-
         gf3d_vgraphics_render_start();
         //3D draws
         world_draw(world);
@@ -112,7 +109,7 @@ int main(int argc, char* argv[])
         entity_draw_all();
 
         //2D draws
-        gf2d_font_draw_line_tag("WASD to move, Arrows to pan camera", FT_H1, GFC_COLOR_WHITE, gfc_vector2d(10, 10));
+        gf2d_font_draw_line_tag("WASD to move, UP/DOWN Arrows for speed", FT_H1, GFC_COLOR_WHITE, gfc_vector2d(10, 10));
         gf2d_font_draw_line_tag("+", FT_H1, GFC_COLOR_RED, gfc_vector2d(640, 360)); 
         gf2d_mouse_draw();
         gf3d_vgraphics_render_end();
