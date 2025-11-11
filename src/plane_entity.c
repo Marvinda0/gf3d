@@ -4,6 +4,7 @@
 #include "camera_entity.h"
 #include "world.h"
 #include "plane_entity.h"
+#include "weapon_system.h"
 #include "quaternion.h"
 #include <math.h>
 
@@ -19,14 +20,17 @@ void plane_init_data(PlaneData* data)
     // Identity quaternion (no rotation)
     quaternion_identity(&data->orientation);
 
+    // Initialize direction vector
+    data->forward = gfc_vector3d(0, 1, 0);
+
     // Speed
     data->speed = 10.0f;
     data->targetSpeed = 10.0f;
     data->acceleration = 0.3f;
     data->maxSpeed = 25.0f;
-    data->minSpeed = 3.0f;
+    data->minSpeed = 1.0f;
 
-    // Control sensitivity - how much rotation per frame
+    // Control sensitivity
     data->pitchSensitivity = 0.05f;
     data->yawSensitivity = 0.04f;
     data->rollSensitivity = 0.06f;
@@ -39,7 +43,13 @@ void plane_init_data(PlaneData* data)
     data->isStalling = 0;
     data->camera = NULL;
 
-    slog("Plane initialized");
+    data->health = 100;
+    data->maxHealth = 100;
+
+    // Initialize weapon loadout
+    weapon_loadout_init(&data->loadout, WEAPON_MACHINE_GUN, WEAPON_MISSILE, WEAPON_HOMING);
+
+    slog("Plane initialized with weapons and health");
 }
 
 Entity* plane_spawn(GFC_Vector3D position, GFC_Color color)
@@ -62,9 +72,9 @@ Entity* plane_spawn(GFC_Vector3D position, GFC_Color color)
         self->bounds->x = position.x;
         self->bounds->y = position.y;
         self->bounds->z = position.z;
-        self->bounds->w = 5.0f;
-        self->bounds->h = 5.0f;
-        self->bounds->d = 5.0f;
+        self->bounds->w = 10.0f;  // Made bigger so bullets hit easier
+        self->bounds->h = 10.0f;
+        self->bounds->d = 10.0f;
     }
 
     self->think = plane_think;
@@ -172,6 +182,17 @@ void plane_handle_controls(Entity* self)
         data->targetSpeed -= 0.3f;
         if (data->targetSpeed < data->minSpeed) data->targetSpeed = data->minSpeed;
     }
+
+    // Weapon controls
+    if (gfc_input_command_pressed("space")) {
+        weapon_fire(self, 0);  // Fire primary weapon
+    }
+    if (gfc_input_command_pressed("fire_secondary")) {
+        weapon_fire(self, 1);  // Fire secondary weapon
+    }
+    if (gfc_input_command_pressed("fire_tertiary")) {
+        weapon_fire(self, 2);  // Fire tertiary weapon
+    }
 }
 
 void plane_apply_physics(Entity* self)
@@ -191,14 +212,14 @@ void plane_apply_physics(Entity* self)
 
     data->isStalling = (data->speed < data->minSpeed);
 
-    // Get forward direction from quaternion
-    GFC_Vector3D forward, up;
-    quaternion_rotate_v(&forward, data->orientation, gfc_vector3d(0, 1, 0));
+    // Get forward direction from quaternion and store it
+    GFC_Vector3D up;
+    quaternion_rotate_v(&data->forward, data->orientation, gfc_vector3d(0, 1, 0));
     quaternion_rotate_v(&up, data->orientation, gfc_vector3d(0, 0, 1));
 
     // Thrust - forward
     GFC_Vector3D thrust;
-    gfc_vector3d_scale(thrust, forward, data->speed);
+    gfc_vector3d_scale(thrust, data->forward, data->speed);
 
     // Lift - upward relative to wings
     float liftAmount = data->lift * data->speed * 0.5f;
@@ -208,7 +229,7 @@ void plane_apply_physics(Entity* self)
 
     // Drag
     GFC_Vector3D drag;
-    gfc_vector3d_scale(drag, forward, -data->drag * data->speed);
+    gfc_vector3d_scale(drag, data->forward, -data->drag * data->speed);
 
     // Gravity
     GFC_Vector3D gravity = gfc_vector3d(0, 0, data->gravity);
@@ -225,8 +246,6 @@ void plane_update_rotation_for_rendering(Entity* self)
     if (!self || !self->data) return;
     PlaneData* data = (PlaneData*)self->data;
 
-    // Convert quaternion to Euler angles for rendering
-    // This is simplified - you can use a more accurate conversion if needed
     Quaternion q = data->orientation;
 
     // Roll (x-axis rotation)
@@ -255,10 +274,14 @@ void plane_think(Entity* self)
 
 void plane_update(Entity* self)
 {
-    if (!self) return;
+    if (!self || !self->data) return;
+    PlaneData* data = (PlaneData*)self->data;
 
     plane_apply_physics(self);
     plane_update_rotation_for_rendering(self);
+
+    // Update weapon cooldowns
+    weapon_update_cooldowns(&data->loadout, 1.0f / 60.0f);
 
     gfc_vector3d_add(self->position, self->position, self->velocity);
 
@@ -304,4 +327,29 @@ Quaternion plane_get_orientation()
     }
     PlaneData* data = (PlaneData*)playerPlane->data;
     return data->orientation;
+}
+
+GFC_Vector3D plane_get_forward()
+{
+    if (!playerPlane || !playerPlane->data) {
+        return gfc_vector3d(0, 1, 0);
+    }
+    PlaneData* data = (PlaneData*)playerPlane->data;
+    return data->forward;
+}
+
+void plane_take_damage(Entity* self, int damage)
+{
+    if (!self || !self->data) return;
+
+    PlaneData* data = (PlaneData*)self->data;
+    data->health -= damage;
+    if (data->health < 0) data->health = 0;
+
+    slog("PLAYER HIT! Damage=%d | Health=%d/%d", damage, data->health, data->maxHealth);
+
+    if (data->health <= 0) {
+        slog("PLAYER DESTROYED!");
+        // TODO
+    }
 }

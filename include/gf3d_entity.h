@@ -122,3 +122,15 @@ Uint8 entity_get_floor_position(Entity* self, World *world, GFC_Vector3D* contac
  * @returns 1 if the entities are colliding, 0 otherwise
 */
 Uint8 entity_sphere_collision(Entity* a, Entity* b, float radiusA, float radiusB);
+
+/*
+ * @brief this function gets an entity by its index in the entity system
+ * @param index: the index of the entity to get
+ * @returns a pointer to the entity, or NULL if the index is invalid
+ */
+Entity* entity_get_by_index(int index);
+/*
+ * @brief this function gets the maximum number of entities supported by the entity system
+ * @returns the maximum number of entities
+ */
+Uint32 entity_get_max_count();

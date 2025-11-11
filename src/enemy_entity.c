@@ -1,7 +1,9 @@
 #include "enemy_entity.h"
 #include "simple_logger.h"
+#include "bullet_entity.h"
 #include "gfc_vector.h"
-#include "math.h"
+#include "weapon_system.h"
+#include <math.h>
 
 Entity* enemy_spawn(GFC_Vector3D pos, EnemyType type, Entity* target)
 {
@@ -14,78 +16,155 @@ Entity* enemy_spawn(GFC_Vector3D pos, EnemyType type, Entity* target)
     e->type = type;
     e->target = target;
     e->fireTimer = 0;
+    e->forward = gfc_vector3d(0, 1, 0);
 
     switch (type)
     {
-    case ENEMY_TURRET:
-        gfc_line_cpy(self->name, "ENEMY_TURRET");
-        e->health = 100;
+    case ENEMY_LIGHT_TURRET:
+        gfc_line_cpy(self->name, "Light Turret");
+        e->health = 50;
+        e->maxHealth = 50;
         e->speed = 0;
+        e->fireRate = 0.8f;
         weapon_loadout_init(&e->loadout, WEAPON_MACHINE_GUN, 0, 0);
         e->modelPath = "models/enemies/turret.obj";
         e->color = GFC_COLOR_WHITE;
-        e->scale = gfc_vector3d(1.5f, 1.5f, 1.5f);
+        e->scale = gfc_vector3d(1.0f, 1.0f, 1.0f);
+        break;
+
+    case ENEMY_HEAVY_TURRET:
+        gfc_line_cpy(self->name, "Heavy Turret");
+        e->health = 150;
+        e->maxHealth = 150;
+        e->speed = 0;
+        e->fireRate = 2.0f;
+        weapon_loadout_init(&e->loadout, WEAPON_MISSILE, 0, 0);
+        e->modelPath = "models/enemies/turret.obj";
+        e->color = GFC_COLOR_RED;
+        e->scale = gfc_vector3d(2.0f, 2.0f, 2.0f);
         break;
 
     case ENEMY_FIGHTER:
-        gfc_line_cpy(self->name, "ENEMY_FIGHTER");
+        gfc_line_cpy(self->name, "Fighter");
         e->health = 60;
-        e->speed = 6;
-        weapon_loadout_init(&e->loadout, WEAPON_MACHINE_GUN, WEAPON_MISSILE, 0);
-        e->modelPath = "models/enemies/plane.obj";
+        e->maxHealth = 60;
+        e->speed = 60.0f;  // Units per second
+        e->fireRate = 1.0f;
+        weapon_loadout_init(&e->loadout, WEAPON_MACHINE_GUN, 0, 0);
+        e->modelPath = "models/enemies/enemy_plane.obj";
         e->color = GFC_COLOR_WHITE;
         e->scale = gfc_vector3d(1.0f, 1.0f, 1.0f);
         break;
 
     case ENEMY_BOMBER:
-        gfc_line_cpy(self->name, "ENEMY_BOMBER");
+        gfc_line_cpy(self->name, "Bomber");
         e->health = 120;
-        e->speed = 3;
+        e->maxHealth = 120;
+        e->speed = 40.0f;
+        e->fireRate = 2.5f;
         weapon_loadout_init(&e->loadout, WEAPON_MISSILE, 0, 0);
-        e->modelPath = "models/enemies/plane.obj";
-        e->color = GFC_COLOR_RED;
-        e->scale = gfc_vector3d(2.0f, 2.0f, 2.0f);
+        e->modelPath = "models/enemies/enemy_plane.obj";
+        e->color = GFC_COLOR_BLUE;
+        e->scale = gfc_vector3d(1.5f, 1.5f, 1.5f);
         break;
 
     case ENEMY_INTERCEPTOR:
-        gfc_line_cpy(self->name, "ENEMY_INTERCEPTOR");
+        gfc_line_cpy(self->name, "Interceptor");
         e->health = 40;
-        e->speed = 8;
-        weapon_loadout_init(&e->loadout, WEAPON_MACHINE_GUN, WEAPON_HOMING, 0);
-        e->modelPath = "models/enemies/plane.obj";
-        e->color = GFC_COLOR_BLUE;
+        e->maxHealth = 40;
+        e->speed = 90.0f;
+        e->fireRate = 1.2f;
+        weapon_loadout_init(&e->loadout, WEAPON_HOMING, 0, 0);
+        e->modelPath = "models/enemies/enemy_plane.obj";
+        e->color = GFC_COLOR_YELLOW;
         e->scale = gfc_vector3d(0.8f, 0.8f, 0.8f);
         break;
     }
 
-    // Apply visual settings
     self->mesh = gf3d_mesh_load(e->modelPath);
     self->color = e->color;
     self->scale = e->scale;
     self->position = pos;
     self->rotation = gfc_vector3d(0, 0, 0);
 
+    if (e->type == ENEMY_LIGHT_TURRET || e->type == ENEMY_HEAVY_TURRET)
+    {
+        GFC_Vector3D contact;
+        if (entity_get_floor_position(self, get_the_world(), &contact))
+        {
+            self->position.z = contact.z;
+        }
+    }
+
+    self->bounds = gfc_allocate_array(sizeof(GFC_Box), 1);
+    if (self->bounds) {
+        self->bounds->x = pos.x;
+        self->bounds->y = pos.y;
+        self->bounds->z = pos.z;
+        self->bounds->w = 10.0f * e->scale.x;
+        self->bounds->h = 10.0f * e->scale.y;
+        self->bounds->d = 10.0f * e->scale.z;
+    }
+
     self->think = enemy_think;
     self->update = enemy_update;
-    self->free = entity_free;
+    self->free = enemy_free;
 
     return self;
 }
-
 
 void enemy_think(Entity* self)
 {
     if (!self || !self->data) return;
     EnemyData* e = (EnemyData*)self->data;
+    if (!e->target || !e->target->_inuse) return;
+
     float dt = 1.0f / 60.0f;
-
-    e->fireTimer -= dt;
     weapon_update_cooldowns(&e->loadout, dt);
+    e->fireTimer -= dt;
 
-    if (e->fireTimer <= 0 && e->target)
+    GFC_Vector3D toPlayer;
+    gfc_vector3d_sub(toPlayer, e->target->position, self->position);
+    float distToPlayer = gfc_vector3d_magnitude(toPlayer);
+    gfc_vector3d_normalize(&toPlayer);
+
+    if (e->speed > 0) {
+        float turnSpeed = 2.5f;
+        if (e->type == ENEMY_INTERCEPTOR) turnSpeed = 4.0f;
+        float maxTurnThisFrame = turnSpeed * dt;
+
+        float dot = gfc_vector3d_dot_product(e->forward, toPlayer);
+        dot = fmaxf(-1.0f, fminf(1.0f, dot));
+        float angleToTarget = acosf(dot);
+
+        if (angleToTarget > 0.01f) {
+            float turnAmount = fminf(angleToTarget, maxTurnThisFrame);
+            float t = turnAmount / angleToTarget;
+
+            GFC_Vector3D newForward;
+            gfc_vector3d_scale(newForward, e->forward, (1.0f - t));
+            GFC_Vector3D temp;
+            gfc_vector3d_scale(temp, toPlayer, t);
+            gfc_vector3d_add(e->forward, newForward, temp);
+            gfc_vector3d_normalize(&e->forward);
+        }
+    }
+    else {
+        e->forward = toPlayer;
+    }
+
+    float dot = gfc_vector3d_dot_product(e->forward, toPlayer);
+    float maxRange = 1400.0f;
+    float minAimDot = 0.75f;
+
+    if (e->type == ENEMY_LIGHT_TURRET || e->type == ENEMY_HEAVY_TURRET) {
+        minAimDot = 0.9f;
+    }
+
+    if (dot > minAimDot && e->fireTimer <= 0 && distToPlayer < maxRange)
     {
-        weapon_fire(self, 0);
-        e->fireTimer = e->loadout.weapons[0].fireRate * 2; // pause between bursts
+        enemy_fire_weapon(self, 0);
+        e->fireTimer = e->fireRate;
     }
 }
 
@@ -94,14 +173,107 @@ void enemy_update(Entity* self)
     if (!self || !self->data) return;
     EnemyData* e = (EnemyData*)self->data;
 
-    if (e->speed > 0 && e->target)
-    {
-        GFC_Vector3D toPlayer;
-        gfc_vector3d_sub(toPlayer, e->target->position, self->position);
-        gfc_vector3d_normalize(&toPlayer);
-
-        GFC_Vector3D move;
-        gfc_vector3d_scale(move, toPlayer, e->speed * (1.0f / 60.0f));
-        gfc_vector3d_add(self->position, self->position, move);
+    if (e->type == ENEMY_LIGHT_TURRET || e->type == ENEMY_HEAVY_TURRET) {
+        if (self->bounds) {
+            self->bounds->x = self->position.x;
+            self->bounds->y = self->position.y;
+            self->bounds->z = self->position.z;
+        }
+        return;
     }
+
+    if (!e->target || !e->target->_inuse) return;
+
+    float dt = 1.0f / 60.0f;
+
+    GFC_Vector3D toPlayer;
+    gfc_vector3d_sub(toPlayer, e->target->position, self->position);
+    float dist = gfc_vector3d_magnitude(toPlayer);
+
+    float idealDist = 300.0f;
+    if (e->type == ENEMY_BOMBER) idealDist = 400.0f;
+    if (e->type == ENEMY_INTERCEPTOR) idealDist = 300.0f;
+
+    GFC_Vector3D velocity;
+    if (dist > idealDist + 10.0f) {
+        gfc_vector3d_scale(velocity, e->forward, e->speed);
+    }
+    else if (dist < idealDist - 10.0f) {
+        gfc_vector3d_scale(velocity, e->forward, -e->speed * 0.5f);
+    }
+    else {
+        GFC_Vector3D right;
+        right.x = -e->forward.y;
+        right.y = e->forward.x;
+        right.z = 0;
+        gfc_vector3d_normalize(&right);
+        gfc_vector3d_scale(velocity, right, e->speed * 0.7f);
+    }
+
+    gfc_vector3d_scale(velocity, velocity, dt);
+    gfc_vector3d_add(self->position, self->position, velocity);
+
+    self->rotation.z = atan2f(e->forward.x, e->forward.y);
+
+    if (self->bounds) {
+        self->bounds->x = self->position.x;
+        self->bounds->y = self->position.y;
+        self->bounds->z = self->position.z;
+    }
+}
+
+void enemy_fire_weapon(Entity* self, int weaponIndex)
+{
+    if (!self || !self->data) return;
+
+    EnemyData* e = (EnemyData*)self->data;
+    if (weaponIndex >= e->loadout.weaponCount) return;
+    if (!e->target || !e->target->_inuse) return;
+
+    WeaponStats* w = &e->loadout.weapons[weaponIndex];
+    if (e->loadout.cooldownTimers[weaponIndex] > 0) return;
+
+    e->loadout.cooldownTimers[weaponIndex] = w->fireRate;
+
+    GFC_Vector3D dirToPlayer;
+    gfc_vector3d_sub(dirToPlayer, e->target->position, self->position);
+    gfc_vector3d_normalize(&dirToPlayer);
+
+    GFC_Vector3D spawnPos;
+    gfc_vector3d_scale(spawnPos, dirToPlayer, 12.0f);
+    gfc_vector3d_add(spawnPos, spawnPos, self->position);
+
+    Entity* bullet = bullet_entity_spawn(spawnPos, dirToPlayer, self, *w);
+
+    if (bullet && w->homing && e->target)
+    {
+        BulletData* b = (BulletData*)bullet->data;
+        b->target = e->target;
+    }
+}
+
+void enemy_take_damage(Entity* self, int damage)
+{
+    if (!self || !self->data) return;
+
+    EnemyData* e = (EnemyData*)self->data;
+    e->health -= damage;
+
+    if (e->health <= 0)
+    {
+        entity_free(self);
+    }
+}
+
+void enemy_free(Entity* self)
+{
+    if (!self) return;
+
+    if (self->data)
+    {
+        free(self->data);
+        self->data = NULL;
+    }
+
+    self->_inuse = 0;
 }

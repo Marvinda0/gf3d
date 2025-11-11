@@ -2,68 +2,106 @@
 #define __PLANE_ENTITY_H__
 
 #include "gf3d_entity.h"
-#include "quaternion.h"
+#include "gfc_types.h"
+#include "gfc_vector.h"
+#include "gfc_matrix.h"
 #include "weapon_system.h"
+#include "quaternion.h"
 
 typedef struct
 {
-    Quaternion orientation;     // Plane's rotation as quaternion
+    Quaternion orientation;  // Quaternion representing plane's rotation
 
-    GFC_Vector3D forward;         // Forward direction vector
-    float speed;
-    float targetSpeed;
-    float acceleration;
-    float maxSpeed;
-    float minSpeed;
+    GFC_Vector3D forward;    // which way plane is facing
 
-    float pitchSensitivity;
-    float yawSensitivity;
-    float rollSensitivity;
+    float speed;             // Current forward speed
+    float targetSpeed;       // Speed we're trying to reach
+    float acceleration;      // How fast we speed up/slow down
+    float maxSpeed;          // Maximum speed
+    float minSpeed;          // Stall speed (too slow = drop)
 
-    float lift;
-    float drag;
-    float gravity;
+    float pitchSensitivity;  // How responsive pitch control is
+    float yawSensitivity;    // How responsive yaw control is
+    float rollSensitivity;   // How responsive roll control is
 
-    int isStalling;
-
-    WeaponLoadout loadout;    // Plane's weapons
+    float lift;              // Upward force from wings
+    float drag;              // Air resistance
+    float gravity;           // Downward force
 
     Entity* camera;
+
+    Uint8 isStalling;        // Are we going too slow?
+
+    // ADDED: Health system
+    int health;
+    int maxHealth;
+
+    // Weapons
+    WeaponLoadout loadout;
+
 } PlaneData;
 
 /**
- * @brief Spawns a plane entity
- * @param position Starting position
- * @param color Plane color
+ * @brief Spawn a player-controlled plane
+ * @param position Starting position in world
+ * @param color Color tint for the plane
  * @return Pointer to the created plane entity
  */
 Entity* plane_spawn(GFC_Vector3D position, GFC_Color color);
 
 /**
- * @brief Handles player input for plane controls
+ * @brief Think function - handles input and flight control logic
+ * @param self The plane entity
  */
 void plane_think(Entity* self);
 
 /**
- * @brief Updates plane physics and position
+ * @brief Update function - applies physics and updates orientation
+ * @param self The plane entity
  */
 void plane_update(Entity* self);
 
 /**
- * @brief Frees plane data
+ * @brief Apply flight physics (lift, drag, gravity)
+ * @param self The plane entity
  */
-void plane_free(Entity* self);
+void plane_apply_physics(Entity* self);
 
 /**
- * @brief Gets the player's plane entity
- * @return Pointer to player plane
+ * @brief Handle flight controls (pitch, yaw, roll)
+ * @param self The plane entity
+ */
+void plane_handle_controls(Entity* self);
+
+/**
+ * @brief Get the player's plane (singleton accessor)
+ * @return Pointer to player plane entity
  */
 Entity* plane_get_player();
 
 /**
- * @brief Gets the plane's orientation quaternion
- * @return Current orientation as quaternion
+ * @brief Get the orientation quaternion of the player's plane
+ * @return Quaternion representing orientation
  */
 Quaternion plane_get_orientation();
 
-#endif
+/**
+ * @brief Get the forward direction of the player's plane
+ * @return Forward direction vector
+ */
+GFC_Vector3D plane_get_forward();
+
+/**
+ * @brief Player takes damage
+ * @param self The plane entity
+ * @param damage Amount of damage to take
+ */
+void plane_take_damage(Entity* self, int damage);
+
+/**
+ * @brief Free plane data
+ * @param self The plane entity data
+ */
+void plane_free(Entity* self);
+
+#endif // __PLANE_ENTITY_H__

@@ -4,16 +4,16 @@
 
 typedef struct
 {
-	Entity *entity_list;
+	Entity* entity_list;
 	Uint32 entity_max;
 }EntitySystem;
 
-static EntitySystem entity_system = {0};
+static EntitySystem entity_system = { 0 };
 
 Entity* entity_new()
 {
 	Uint32 i;
-	if(!entity_system.entity_list)
+	if (!entity_system.entity_list)
 	{
 		slog("entity system not initialized");
 		return NULL;
@@ -33,7 +33,7 @@ Entity* entity_new()
 	return NULL;
 }
 
-void entity_free(Entity * self)
+void entity_free(Entity* self)
 {
 	if (!self) return;
 	if (self->free) self->free(self);
@@ -55,7 +55,7 @@ void entity_system_init(Uint32 max_entities)
 		return;
 	}
 	entity_system.entity_list = gfc_allocate_array(sizeof(Entity), max_entities);
-if (!entity_system.entity_list)
+	if (!entity_system.entity_list)
 	{
 		slog("failed to allocate entity system");
 		return;
@@ -96,7 +96,6 @@ void entity_draw(Entity* self, GFC_Vector3D lightPos, GFC_Color colorMod)
 		self->texture,
 		lightPos,
 		colorMod);
-
 }
 
 void entity_draw_all() {
@@ -104,46 +103,26 @@ void entity_draw_all() {
 	for (i = 0; i < entity_system.entity_max; i++) {
 		if (!entity_system.entity_list[i]._inuse) continue;
 		entity_draw(&entity_system.entity_list[i], gfc_vector3d(0, 50, 0), GFC_COLOR_WHITE);
-		
 	}
 }
 
 void entity_think(Entity* self) {
-	if (!self) {
-		slog("entity_think: self is NULL!");
-		return;
-	}
-	slog("entity_think called for: %s, think ptr=%p", self->name, self->think);
-
+	if (!self) return;
 	if (self->think) {
-		slog("About to call think function...");
 		self->think(self);
-		slog("Finished calling think function");
-	}
-	else {
-		slog("No think function for %s", self->name);
 	}
 }
 
-void entity_think_all() {	
+void entity_think_all() {
 	int i;
-	int count = 0;
 	for (i = 0; i < entity_system.entity_max; i++) {
 		if (!entity_system.entity_list[i]._inuse) continue;
-		count++;
-		slog("Found entity %d: _inuse=%d, think=%p, name=%s",
-			i,
-			entity_system.entity_list[i]._inuse,
-			entity_system.entity_list[i].think,
-			entity_system.entity_list[i].name);
 		entity_think(&entity_system.entity_list[i]);
 	}
-	slog("Total entities found: %d", count);
 }
 
 void entity_update(Entity* self) {
 	if (!self) return;
-		 
 	if (self->update) {
 		self->update(self);
 	}
@@ -157,22 +136,21 @@ void entity_update_all() {
 	}
 }
 
-Uint8 entity_get_floor_position(Entity* self, World* world, GFC_Vector3D *contact) {
+Uint8 entity_get_floor_position(Entity* self, World* world, GFC_Vector3D* contact) {
 	if (!self || !world || !contact) return 0;
 	GFC_Vector3D start = self->position;
 	GFC_Vector3D end = self->position;
 
-	start.z += 3.0f;     // small upward offset before casting
-	end.z -= 50000.0f; // cast far down (in case terrain is large)
+	start.z += 3.0f;
+	end.z -= 50000.0f;
 
 	if (world_edge_test(world, start, end, contact)) {
-		contact->z += 4.9f; // lift collision point slightly so entity rests above floor
+		contact->z += 4.9f;
 		return 1;
 	}
 	return 0;
 }
 
-// Simple sphere collision for the moment
 Uint8 entity_sphere_collision(Entity* a, Entity* b, float radiusA, float radiusB)
 {
 	float dx = a->position.x - b->position.x;
@@ -183,4 +161,14 @@ Uint8 entity_sphere_collision(Entity* a, Entity* b, float radiusA, float radiusB
 	return (distSq < radiusSum * radiusSum);
 }
 
+Entity* entity_get_by_index(int index)
+{
+	if (index < 0 || index >= entity_system.entity_max) return NULL;
+	if (!entity_system.entity_list[index]._inuse) return NULL;
+	return &entity_system.entity_list[index];
+}
 
+Uint32 entity_get_max_count()
+{
+	return entity_system.entity_max;
+}

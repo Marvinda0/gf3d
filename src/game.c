@@ -22,9 +22,9 @@
 #include "gf3d_camera.h"
 #include "gf3d_mesh.h"
 #include "gf3d_entity.h"
-//#include "monster.h"
 #include "plane_entity.h"
 #include "world.h"
+#include "enemy_entity.h"
 
 extern int __DEBUG;
 
@@ -43,7 +43,7 @@ void exitGame()
 int main(int argc, char* argv[])
 {
     //local variables
-    GFC_Vector3D lightPos = { 0,50,0 };
+    GFC_Vector3D lightPos = { 0,500,500 };  // FIXED: Much brighter light position
     GFC_Color lightColor = { 1,1,1,1 };
     GFC_Matrix4 id, terrainMat;
     GFC_Vector3D spawnPos = gfc_vector3d(0, 0, 100);
@@ -57,15 +57,11 @@ int main(int argc, char* argv[])
     gfc_input_init("config/input.cfg");
     gfc_config_def_init();
     gfc_action_init(1024);
-    slog("Passed input");
 
     //gf3d init
     gf3d_vgraphics_init("config/setup.cfg");
-    slog("Passed ginit");
     gf2d_font_init("config/font.cfg");
-    slog("Passed finit");
     gf2d_actor_init(100);
-    slog("Passed 3");
 
     //entity system init
     entity_system_init(1000);
@@ -84,12 +80,29 @@ int main(int argc, char* argv[])
     World* world = world_load("defs/terrain/terrain.def.txt");
     gfc_matrix4_multiply_scalar(terrainMat, id, 5);
 
-    // Spawn monster at z=20 (high up so you can see it)
+    // Spawn player
     Entity* player = plane_spawn(spawnPos, GFC_COLOR_WHITE);
     if (!player) {
-        slog("Failed to spawn monster!");
+        slog("Failed to spawn player!");
         _done = 1;
     }
+
+    // Spawn enemies
+    GFC_Vector3D enemy_spawns[] = {
+       { -256.03f, 236.84f, 8.71f },
+       { -94.62f, -374.55f, 8.71f },
+       { 262.17f, 86.17f, 219.06f },
+       { -38.25f, 331.75f, 350.19f },
+       { -384.89f, -114.42f, 453.39f }
+    };
+
+    enemy_spawn(enemy_spawns[0], ENEMY_LIGHT_TURRET, player);
+    enemy_spawn(enemy_spawns[1], ENEMY_HEAVY_TURRET, player);
+    enemy_spawn(enemy_spawns[2], ENEMY_FIGHTER, player);
+    enemy_spawn(enemy_spawns[3], ENEMY_BOMBER, player);
+    enemy_spawn(enemy_spawns[4], ENEMY_INTERCEPTOR, player);
+
+    char healthText[64];
 
     // Main game loop
     while (!_done)
@@ -103,14 +116,32 @@ int main(int argc, char* argv[])
         entity_update_all();
 
         gf3d_vgraphics_render_start();
+
         //3D draws
         world_draw(world);
         gf3d_sky_draw(skyMesh, id, GFC_COLOR_WHITE, skyTexture);
         entity_draw_all();
 
-        //2D draws
-        gf2d_font_draw_line_tag("WASD to move, UP/DOWN Arrows for speed", FT_H1, GFC_COLOR_WHITE, gfc_vector2d(10, 10));
-        gf2d_font_draw_line_tag("+", FT_H1, GFC_COLOR_RED, gfc_vector2d(640, 360)); 
+        //2D draws - HUD
+        // Display player health
+        PlaneData* pdata = NULL;
+        if (player && player->data) {
+            pdata = (PlaneData*)player->data;
+
+            // Health display
+            sprintf(healthText, "HP: %d / %d", pdata->health, pdata->maxHealth);
+            GFC_Color healthColor = pdata->health > 50 ? GFC_COLOR_GREEN :
+                pdata->health > 20 ? GFC_COLOR_YELLOW : GFC_COLOR_RED;
+            gf2d_font_draw_line_tag(healthText, FT_H1, healthColor, gfc_vector2d(10, 10));
+        }
+
+        // Controls
+        gf2d_font_draw_line_tag("WASD: Pitch/Roll | QE: Yaw | Arrows: Speed | Space: Fire",
+            FT_H3, GFC_COLOR_WHITE, gfc_vector2d(10, 700));
+
+        // Crosshair
+        gf2d_font_draw_line_tag("+", FT_H1, GFC_COLOR_RED, gfc_vector2d(640, 360));
+
         gf2d_mouse_draw();
         gf3d_vgraphics_render_end();
 
