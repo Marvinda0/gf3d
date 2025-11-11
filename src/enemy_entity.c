@@ -123,45 +123,20 @@ void enemy_think(Entity* self)
     weapon_update_cooldowns(&e->loadout, dt);
     e->fireTimer -= dt;
 
+    // Direction to player
     GFC_Vector3D toPlayer;
     gfc_vector3d_sub(toPlayer, e->target->position, self->position);
-    float distToPlayer = gfc_vector3d_magnitude(toPlayer);
     gfc_vector3d_normalize(&toPlayer);
 
-    if (e->speed > 0) {
-        float turnSpeed = 2.5f;
-        if (e->type == ENEMY_INTERCEPTOR) turnSpeed = 4.0f;
-        float maxTurnThisFrame = turnSpeed * dt;
+    float turnRate = 2.0f * dt;
+    GFC_Vector3D diff;
+    gfc_vector3d_sub(diff, toPlayer, e->forward);
+    gfc_vector3d_scale(diff, diff, turnRate);
+    gfc_vector3d_add(e->forward, e->forward, diff);
+    gfc_vector3d_normalize(&e->forward);
 
-        float dot = gfc_vector3d_dot_product(e->forward, toPlayer);
-        dot = fmaxf(-1.0f, fminf(1.0f, dot));
-        float angleToTarget = acosf(dot);
-
-        if (angleToTarget > 0.01f) {
-            float turnAmount = fminf(angleToTarget, maxTurnThisFrame);
-            float t = turnAmount / angleToTarget;
-
-            GFC_Vector3D newForward;
-            gfc_vector3d_scale(newForward, e->forward, (1.0f - t));
-            GFC_Vector3D temp;
-            gfc_vector3d_scale(temp, toPlayer, t);
-            gfc_vector3d_add(e->forward, newForward, temp);
-            gfc_vector3d_normalize(&e->forward);
-        }
-    }
-    else {
-        e->forward = toPlayer;
-    }
-
-    float dot = gfc_vector3d_dot_product(e->forward, toPlayer);
-    float maxRange = 1400.0f;
-    float minAimDot = 0.75f;
-
-    if (e->type == ENEMY_LIGHT_TURRET || e->type == ENEMY_HEAVY_TURRET) {
-        minAimDot = 0.9f;
-    }
-
-    if (dot > minAimDot && e->fireTimer <= 0 && distToPlayer < maxRange)
+    float dot = e->forward.x * toPlayer.x + e->forward.y * toPlayer.y + e->forward.z * toPlayer.z;
+    if (dot > 0.75f && e->fireTimer <= 0)
     {
         enemy_fire_weapon(self, 0);
         e->fireTimer = e->fireRate;
@@ -172,49 +147,19 @@ void enemy_update(Entity* self)
 {
     if (!self || !self->data) return;
     EnemyData* e = (EnemyData*)self->data;
-
-    if (e->type == ENEMY_LIGHT_TURRET || e->type == ENEMY_HEAVY_TURRET) {
-        if (self->bounds) {
-            self->bounds->x = self->position.x;
-            self->bounds->y = self->position.y;
-            self->bounds->z = self->position.z;
-        }
-        return;
-    }
-
-    if (!e->target || !e->target->_inuse) return;
+    if (e->speed <= 0) return;
 
     float dt = 1.0f / 60.0f;
 
-    GFC_Vector3D toPlayer;
-    gfc_vector3d_sub(toPlayer, e->target->position, self->position);
-    float dist = gfc_vector3d_magnitude(toPlayer);
+    // --- Always move forward ---
+    GFC_Vector3D move;
+    gfc_vector3d_scale(move, e->forward, e->speed * dt);
+    gfc_vector3d_add(self->position, self->position, move);
 
-    float idealDist = 300.0f;
-    if (e->type == ENEMY_BOMBER) idealDist = 400.0f;
-    if (e->type == ENEMY_INTERCEPTOR) idealDist = 300.0f;
-
-    GFC_Vector3D velocity;
-    if (dist > idealDist + 10.0f) {
-        gfc_vector3d_scale(velocity, e->forward, e->speed);
-    }
-    else if (dist < idealDist - 10.0f) {
-        gfc_vector3d_scale(velocity, e->forward, -e->speed * 0.5f);
-    }
-    else {
-        GFC_Vector3D right;
-        right.x = -e->forward.y;
-        right.y = e->forward.x;
-        right.z = 0;
-        gfc_vector3d_normalize(&right);
-        gfc_vector3d_scale(velocity, right, e->speed * 0.7f);
-    }
-
-    gfc_vector3d_scale(velocity, velocity, dt);
-    gfc_vector3d_add(self->position, self->position, velocity);
-
+    // Simple horizontal rotation (visual turn)
     self->rotation.z = atan2f(e->forward.x, e->forward.y);
 
+    // Update bounds
     if (self->bounds) {
         self->bounds->x = self->position.x;
         self->bounds->y = self->position.y;
@@ -255,15 +200,18 @@ void enemy_fire_weapon(Entity* self, int weaponIndex)
 void enemy_take_damage(Entity* self, int damage)
 {
     if (!self || !self->data) return;
-
     EnemyData* e = (EnemyData*)self->data;
     e->health -= damage;
 
+    slog("%s took %d damage! HP: %d/%d", self->name, damage, e->health, e->maxHealth);
+
     if (e->health <= 0)
     {
+        slog("%s destroyed!", self->name);
         entity_free(self);
     }
 }
+
 
 void enemy_free(Entity* self)
 {

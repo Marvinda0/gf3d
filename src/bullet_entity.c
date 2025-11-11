@@ -44,9 +44,9 @@ Entity* bullet_entity_spawn(GFC_Vector3D pos, GFC_Vector3D forward, Entity* owne
         self->bounds->x = pos.x;
         self->bounds->y = pos.y;
         self->bounds->z = pos.z;
-        self->bounds->w = 5.0f;  // Made bigger
-        self->bounds->h = 5.0f;
-        self->bounds->d = 5.0f;
+        self->bounds->w = 6.0f;  // Made bigger
+        self->bounds->h = 6.0f;
+        self->bounds->d = 6.0f;
     }
 
     return self;
