@@ -43,8 +43,6 @@ void exitGame()
 int main(int argc, char* argv[])
 {
     //local variables
-    GFC_Vector3D lightPos = { 300, 300, 300 }; 
-    GFC_Color lightColor = { 1.5, 1.5, 1.5, 1 };
     GFC_Matrix4 id, terrainMat;
     GFC_Vector3D spawnPos = gfc_vector3d(0, 0, 100);
 
@@ -123,7 +121,7 @@ int main(int argc, char* argv[])
         entity_draw_all();
 
         //2D draws - HUD
-        // Display player health
+        // Display player health 
         PlaneData* pdata = NULL;
         if (player && player->data) {
             pdata = (PlaneData*)player->data;

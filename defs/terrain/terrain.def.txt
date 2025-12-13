@@ -4,7 +4,7 @@
         "terrainMesh":"models/terrain/terrain.obj",
         "terrainTexture":"models/terrain/grass.png", 
         "lightColor": [255,255,255,255],
-        "lightPos": [0,0,1000,10]
+        "lightPos": [0,0,100000,10]
 
     }
 

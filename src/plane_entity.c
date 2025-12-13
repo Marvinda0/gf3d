@@ -9,7 +9,6 @@
 #include <math.h>
 
 #define GRAVITY -0.2f
-#define PLAYER_SPEED 15.0f
 
 static Entity* playerPlane = NULL;
 
@@ -24,10 +23,10 @@ void plane_init_data(PlaneData* data)
     data->forward = gfc_vector3d(0, 1, 0);
 
     // Speed
-    data->speed = 10.0f;
-    data->targetSpeed = 10.0f;
+    data->speed = 5.0f;
+    data->targetSpeed = 5.0f;
     data->acceleration = 0.3f;
-    data->maxSpeed = 25.0f;
+    data->maxSpeed = 15.0f;
     data->minSpeed = 1.0f;
 
     // Control sensitivity
@@ -210,7 +209,7 @@ void plane_apply_physics(Entity* self)
         if (data->speed < data->targetSpeed) data->speed = data->targetSpeed;
     }
 
-    data->isStalling = (data->speed < data->minSpeed);
+    data->isStalling = (data->speed < data->minSpeed); // check for stall (should only happen at low speed)
 
     // Get forward direction from quaternion and store it
     GFC_Vector3D up;
@@ -318,16 +317,7 @@ Entity* plane_get_player()
     return playerPlane;
 }
 
-Quaternion plane_get_orientation()
-{
-    if (!playerPlane || !playerPlane->data) {
-        Quaternion identity;
-        quaternion_identity(&identity);
-        return identity;
-    }
-    PlaneData* data = (PlaneData*)playerPlane->data;
-    return data->orientation;
-}
+
 
 GFC_Vector3D plane_get_forward()
 {

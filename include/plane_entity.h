@@ -30,9 +30,8 @@ typedef struct
 
     Entity* camera;
 
-    Uint8 isStalling;        // Are we going too slow?
+    Uint8 isStalling;        
 
-    // ADDED: Health system
     int health;
     int maxHealth;
 
