@@ -173,6 +173,7 @@
     <ClInclude Include="..\..\gfc\simple_logger\include\simple_logger.h" />
     <ClInclude Include="..\..\include\bullet_entity.h" />
     <ClInclude Include="..\..\include\camera_entity.h" />
+    <ClInclude Include="..\..\include\data_definitions.h" />
     <ClInclude Include="..\..\include\enemy_entity.h" />
     <ClInclude Include="..\..\include\gf2d_actor.h" />
     <ClInclude Include="..\..\include\gf2d_camera.h" />
@@ -235,6 +236,7 @@
     <ClCompile Include="..\..\gfc\src\miniz.c" />
     <ClCompile Include="..\..\src\bullet_entity.c" />
     <ClCompile Include="..\..\src\camera_entity.c" />
+    <ClCompile Include="..\..\src\data_loader.c" />
     <ClCompile Include="..\..\src\enemy_entity.c" />
     <ClCompile Include="..\..\src\game.c" />
     <ClCompile Include="..\..\src\gf2d_actor.c" />

@@ -1,0 +1,47 @@
+{
+  "scout": {
+    "name": "Scout",
+    "description": "Fast and agile, low armor",
+    "health": 300,
+    "maxSpeed": 18.0,
+    "minSpeed": 2.0,
+    "acceleration": 0.4,
+    "pitchSensitivity": 0.06,
+    "yawSensitivity": 0.05,
+    "rollSensitivity": 0.08,
+    "weapons": ["machine_gun", "homing", "machine_gun"],
+    "model": "models/plane1/plane1.obj",
+    "scale": [3.5, 3.5, 3.5],
+    "color": [0.2, 0.8, 1.0, 1.0]
+  },
+  "tank": {
+    "name": "Tank",
+    "description": "Slow and heavily armored",
+    "health": 800,
+    "maxSpeed": 12.0,
+    "minSpeed": 0.5,
+    "acceleration": 0.2,
+    "pitchSensitivity": 0.04,
+    "yawSensitivity": 0.03,
+    "rollSensitivity": 0.05,
+    "weapons": ["missile", "missile", "homing"],
+    "model": "models/plane1/plane1.obj",
+    "scale": [5.0, 5.0, 5.0],
+    "color": [0.2, 1.0, 0.2, 1.0]
+  },
+  "balanced": {
+    "name": "Balanced",
+    "description": "Well-rounded fighter",
+    "health": 500,
+    "maxSpeed": 15.0,
+    "minSpeed": 1.0,
+    "acceleration": 0.3,
+    "pitchSensitivity": 0.05,
+    "yawSensitivity": 0.04,
+    "rollSensitivity": 0.06,
+    "weapons": ["machine_gun", "missile", "homing"],
+    "model": "models/plane1/plane1.obj",
+    "scale": [4.0, 4.0, 4.0],
+    "color": [1.0, 1.0, 1.0, 1.0]
+  }
+}

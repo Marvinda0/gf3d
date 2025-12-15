@@ -3,6 +3,7 @@
 #include "bullet_entity.h"
 #include "gfc_vector.h"
 #include "weapon_system.h"
+#include "data_definitions.h"
 #include <math.h>
 
 Entity* enemy_spawn(GFC_Vector3D pos, EnemyType type, Entity* target)
@@ -18,75 +19,51 @@ Entity* enemy_spawn(GFC_Vector3D pos, EnemyType type, Entity* target)
     e->fireTimer = 0;
     e->forward = gfc_vector3d(0, 1, 0);
 
-    switch (type)
-    {
-    case ENEMY_LIGHT_TURRET:
-        gfc_line_cpy(self->name, "Light Turret");
-        e->health = 40;
-        e->maxHealth = 50;
-        e->speed = 0;
-        e->fireRate = 0.8f;
-        weapon_loadout_init(&e->loadout, WEAPON_MACHINE_GUN, 0, 0);
-        e->modelPath = "models/enemies/turret.obj";
-        e->color = GFC_COLOR_WHITE;
-        e->scale = gfc_vector3d(3.0f, 3.0f, 3.0f);
-        break;
-
-    case ENEMY_HEAVY_TURRET:
-        gfc_line_cpy(self->name, "Heavy Turret");
-        e->health = 40;
-        e->maxHealth = 150;
-        e->speed = 0;
-        e->fireRate = 2.0f;
-        weapon_loadout_init(&e->loadout, WEAPON_MISSILE, 0, 0);
-        e->modelPath = "models/enemies/turret.obj";
-        e->color = GFC_COLOR_RED;
-        e->scale = gfc_vector3d(5.0f, 5.0f, 5.0f);
-        break;
-
-    case ENEMY_FIGHTER:
-        gfc_line_cpy(self->name, "Fighter");
-        e->health = 60;
-        e->maxHealth = 60;
-        e->speed = 45.0f;  // Units per second
-        e->fireRate = 1.0f;
-        weapon_loadout_init(&e->loadout, WEAPON_MACHINE_GUN, 0, 0);
-        e->modelPath = "models/plane1/plane1.obj";
-        e->color = GFC_COLOR_WHITE;
-        e->scale = gfc_vector3d(4.0f, 4.0f, 4.0f);
-        break;
-
-    case ENEMY_BOMBER:
-        gfc_line_cpy(self->name, "Bomber");
-        e->health = 120;
-        e->maxHealth = 120;
-        e->speed = 30.0f;
-        e->fireRate = 2.5f;
-        weapon_loadout_init(&e->loadout, WEAPON_MISSILE, 0, 0);
-        e->modelPath = "models/plane1/plane1.obj";
-        e->color = GFC_COLOR_BLUE;
-        e->scale = gfc_vector3d(5.f, 5.f, 5.f);
-        break;
-
-    case ENEMY_INTERCEPTOR:
-        gfc_line_cpy(self->name, "Interceptor");
-        e->health = 40;
-        e->maxHealth = 40;
-        e->speed = 60.0f;
-        e->fireRate = 1.2f;
-        weapon_loadout_init(&e->loadout, WEAPON_HOMING, 0, 0);
-        e->modelPath = "models/plane1/plane1.obj";
-        e->color = GFC_COLOR_YELLOW;
-        e->scale = gfc_vector3d(3.f, 3.f, 3.f);
-        break;
+    // Load definition from JSON
+    EnemyDefinition* def = data_get_enemy_def(type);
+    if (!def) {
+        slog("ERROR: Failed to get enemy definition for type %d", type);
+        entity_free(self);
+        return NULL;
     }
 
+    // Copy from definition
+    gfc_line_cpy(self->name, def->name);
+    e->health = def->health;
+    e->maxHealth = def->health;
+    e->speed = def->speed;
+    e->fireRate = def->fireRate;
+    e->modelPath = def->modelPath;
+    e->color = def->color;
+    e->scale = def->scale;
+
+    // Convert weapon name to WeaponType enum
+    WeaponType weaponType = WEAPON_MACHINE_GUN; // default
+    if (strcmp(def->weaponType, "machine_gun") == 0) {
+        weaponType = WEAPON_MACHINE_GUN;
+    }
+    else if (strcmp(def->weaponType, "missile") == 0) {
+        weaponType = WEAPON_MISSILE;
+    }
+    else if (strcmp(def->weaponType, "homing") == 0) {
+        weaponType = WEAPON_HOMING;
+    }
+    weapon_loadout_init(&e->loadout, weaponType, 0, 0);
+
+    // Load mesh and set entity properties
     self->mesh = gf3d_mesh_load(e->modelPath);
+
     self->color = e->color;
     self->scale = e->scale;
     self->position = pos;
     self->rotation = gfc_vector3d(0, 0, 0);
+    slog("Enemy %s: mesh=%p, color=(%.2f,%.2f,%.2f,%.2f), scale=(%.2f,%.2f,%.2f)",
+        self->name, self->mesh,
+        e->color.r, e->color.g, e->color.b, e->color.a,
+        e->scale.x, e->scale.y, e->scale.z);
+    self->color = e->color;
 
+    // Ground turrets to terrain
     if (e->type == ENEMY_LIGHT_TURRET || e->type == ENEMY_HEAVY_TURRET)
     {
         GFC_Vector3D contact;
@@ -96,6 +73,7 @@ Entity* enemy_spawn(GFC_Vector3D pos, EnemyType type, Entity* target)
         }
     }
 
+    // Set up bounds
     self->bounds = gfc_allocate_array(sizeof(GFC_Box), 1);
     if (self->bounds) {
         self->bounds->x = pos.x;

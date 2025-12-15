@@ -2,47 +2,30 @@
 #include "simple_logger.h"
 #include "plane_entity.h"
 #include "bullet_entity.h"
+#include "data_definitions.h"
 
 WeaponStats weapon_get_stats(WeaponType type)
 {
     WeaponStats w = { 0 };
     w.type = type;
 
-    switch (type)
-    {
-    case WEAPON_MACHINE_GUN:
-        w.speed = 400;
-        w.damage = 20;
-        w.lifetime = 1.2f;
-        w.fireRate = 0.15f;
-        w.homing = 0;
-        w.turnRate = 0;
-        w.modelPath = "models/bullets/bullet.obj";
-        w.color = GFC_COLOR_WHITE;
-        break;
-    case WEAPON_MISSILE:
-        w.speed = 300;
-        w.damage = 100;
-        w.lifetime = 2.5f;
-        w.fireRate = 1.0f;
-        w.homing = 0;
-        w.turnRate = 0;
-        w.modelPath = "models/bullets/missile.obj";
-        w.color = GFC_COLOR_YELLOW;
-        break;
-    case WEAPON_HOMING:
-        w.speed = 250;
-        w.damage = 50;
-        w.lifetime = 5.0f;
-        w.fireRate = 1.5f;
-        w.homing = 1;
-        w.turnRate = 0.2f;  // Increased turn rate for better homing
-        w.modelPath = "models/bullets/missile.obj";
-        w.color = GFC_COLOR_RED;
-        break;
-    default:
-        break;
+    // Load definition from JSON
+    WeaponDefinition* def = data_get_weapon_def(type);
+    if (!def) {
+        slog("ERROR: Failed to get weapon definition for type %d", type);
+        return w;
     }
+
+    // Copy from definition
+    w.speed = def->speed;
+    w.damage = def->damage;
+    w.lifetime = def->lifetime;
+    w.fireRate = def->fireRate;
+    w.homing = def->homing;
+    w.turnRate = def->turnRate;
+    w.modelPath = def->modelPath;
+    w.color = def->color;
+
     return w;
 }
 

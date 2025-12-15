@@ -157,7 +157,7 @@ ObjData* gf3d_obj_load_from_file(const char* filename)
     }
 
     // 1) Extract file into memory
-    slog("extracting file into memory..."); slog_sync();
+    //slog("extracting file into memory..."); slog_sync();
     mem = gfc_pak_file_extract(filename, &fileSize);
     slog("   extract result: mem=%p size=%zu", mem, fileSize); slog_sync();
     if (!mem)
@@ -167,9 +167,9 @@ ObjData* gf3d_obj_load_from_file(const char* filename)
     }
 
     // 2) Allocate ObjData
-    slog("allocating ObjData struct..."); slog_sync();
+    //slog("allocating ObjData struct..."); slog_sync();
     obj = (ObjData*)gfc_allocate_array(sizeof(ObjData), 1);
-    slog("obj=%p", obj); slog_sync();
+   // slog("obj=%p", obj); slog_sync();
     if (!obj)
     {
         slog("failed to allocate ObjData");
@@ -177,52 +177,54 @@ ObjData* gf3d_obj_load_from_file(const char* filename)
     }
 
     // 3) Count geometry
-    slog("calling gf3d_obj_get_counts_from_file()..."); slog_sync();
+   // slog("calling gf3d_obj_get_counts_from_file()..."); slog_sync();
     gf3d_obj_get_counts_from_file(obj, mem, fileSize);
-    slog("OBJ counts -> verts:%d tex:%d norms:%d faces:%d",
-        obj->vertex_count, obj->texel_count, obj->normal_count, obj->face_count);
-    slog("counts: v=%u vt=%u vn=%u f=%u",
-        obj->vertex_count, obj->texel_count, obj->normal_count, obj->face_count);
+   // slog("OBJ counts -> verts:%d tex:%d norms:%d faces:%d",
+        //obj->vertex_count, obj->texel_count, obj->normal_count, obj->face_count);
+    //slog("counts: v=%u vt=%u vn=%u f=%u",
+        //obj->vertex_count, obj->texel_count, obj->normal_count, obj->face_count);
     slog_sync();
 
     // 4) Allocate vertex arrays
-    slog("allocating vertex-related arrays..."); slog_sync();
+    
+    
+  //slog("allocating vertex-related arrays..."); slog_sync();
     obj->vertices = (GFC_Vector3D*)gfc_allocate_array(sizeof(GFC_Vector3D), obj->vertex_count);
-    slog("   vertices=%p", obj->vertices); slog_sync();
+    //slog("   vertices=%p", obj->vertices); slog_sync();
 
     obj->normals = (GFC_Vector3D*)gfc_allocate_array(sizeof(GFC_Vector3D), obj->normal_count);
-    slog("normals=%p", obj->normals); slog_sync();
+    //slog("normals=%p", obj->normals); slog_sync();
 
     obj->texels = (GFC_Vector2D*)gfc_allocate_array(sizeof(GFC_Vector2D), obj->texel_count);
-    slog("texels=%p", obj->texels); slog_sync();
+    //slog("texels=%p", obj->texels); slog_sync();
 
     obj->faceVerts = (Face*)gfc_allocate_array(sizeof(Face), obj->face_count);
-    slog("faceVerts=%p", obj->faceVerts); slog_sync();
+    //slog("faceVerts=%p", obj->faceVerts); slog_sync();
 
     obj->faceNormals = (Face*)gfc_allocate_array(sizeof(Face), obj->face_count);
-    slog("faceNormals=%p", obj->faceNormals); slog_sync();
+    //slog("faceNormals=%p", obj->faceNormals); slog_sync();
 
     obj->faceTexels = (Face*)gfc_allocate_array(sizeof(Face), obj->face_count);
-    slog("faceTexels=%p", obj->faceTexels); slog_sync();
+    //slog("faceTexels=%p", obj->faceTexels); slog_sync();
 
     // 5) Load data from memory buffer
-    slog("calling gf3d_obj_load_get_data_from_file()..."); slog_sync();
+    //slog("calling gf3d_obj_load_get_data_from_file()..."); slog_sync();
     gf3d_obj_load_get_data_from_file(obj, mem, fileSize);
-    slog("finished gf3d_obj_load_get_data_from_file()"); slog_sync();
+    //slog("finished gf3d_obj_load_get_data_from_file()"); slog_sync();
 
     // 6) Compute bounding box
-    slog("calling gf3d_obj_get_bounds()..."); slog_sync();
+   // slog("calling gf3d_obj_get_bounds()..."); slog_sync();
     gf3d_obj_get_bounds(obj);
-    slog("finished gf3d_obj_get_bounds()"); slog_sync();
+    //slog("finished gf3d_obj_get_bounds()"); slog_sync();
 
     // 7) Reorganize into renderable buffers
-    slog(" calling gf3d_obj_load_reorg()..."); slog_sync();
+    //slog(" calling gf3d_obj_load_reorg()..."); slog_sync();
     gf3d_obj_load_reorg(obj);
-    slog(" finished gf3d_obj_load_reorg(): face_vert_count=%u face_count=%u",
-        obj->face_vert_count, obj->face_count);
+    //slog(" finished gf3d_obj_load_reorg(): face_vert_count=%u face_count=%u",
+        //obj->face_vert_count, obj->face_count);
     slog_sync();
 
-    slog("gf3d_obj_load_from_file completed successfully for %s", filename);
+    //slog("gf3d_obj_load_from_file completed successfully for %s", filename);
     slog_sync();
 
     return obj;

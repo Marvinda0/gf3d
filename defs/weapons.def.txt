@@ -1,0 +1,35 @@
+{
+  "machine_gun": {
+    "name": "Machine Gun",
+    "speed": 400.0,
+    "damage": 20,
+    "lifetime": 1.2,
+    "fireRate": 0.15,
+    "homing": false,
+    "turnRate": 0.0,
+    "model": "models/bullets/bullet.obj",
+    "color": [1.0, 1.0, 1.0, 1.0]
+  },
+  "missile": {
+    "name": "Missile",
+    "speed": 300.0,
+    "damage": 100,
+    "lifetime": 2.5,
+    "fireRate": 1.0,
+    "homing": false,
+    "turnRate": 0.0,
+    "model": "models/bullets/missile.obj",
+    "color": [1.0, 1.0, 0.0, 1.0]
+  },
+  "homing": {
+    "name": "Homing Missile",
+    "speed": 250.0,
+    "damage": 50,
+    "lifetime": 5.0,
+    "fireRate": 1.5,
+    "homing": true,
+    "turnRate": 0.2,
+    "model": "models/bullets/missile.obj",
+    "color": [1.0, 0.0, 0.0, 1.0]
+  }
+}

@@ -25,6 +25,8 @@
 #include "plane_entity.h"
 #include "world.h"
 #include "enemy_entity.h"
+#include "data_definitions.h"
+
 
 extern int __DEBUG;
 
@@ -63,6 +65,8 @@ int main(int argc, char* argv[])
 
     //entity system init
     entity_system_init(1000);
+    data_load_enemy_definitions();  
+    data_load_weapon_definitions(); 
 
     //game init
     srand(SDL_GetTicks());
@@ -78,27 +82,27 @@ int main(int argc, char* argv[])
     World* world = world_load("defs/terrain/terrain.def.txt");
     gfc_matrix4_multiply_scalar(terrainMat, id, 5);
 
-    // Spawn player
-    Entity* player = plane_spawn(spawnPos, GFC_COLOR_WHITE);
-    if (!player) {
-        slog("Failed to spawn player!");
-        _done = 1;
+    slog("About to load level...");
+
+    LevelDefinition* currentLevel = data_load_level("defs/levels/level1.def.txt"); 
+    slog("Level loaded: %p", currentLevel);
+    if (!currentLevel) {    
+        slog("Failed to load level!");  
+        _done = 1;  
+    } else {}
+
+    spawnPos = currentLevel->playerSpawn;   
+
+    Entity* player = plane_spawn(spawnPos, GFC_COLOR_WHITE);    
+    if (!player) {  
+        slog("Failed to spawn player!");    
+        _done = 1;  
     }
 
-    // Spawn enemies
-    GFC_Vector3D enemy_spawns[] = {
-       { -256.03f, 236.84f, 8.71f },
-       { -94.62f, -374.55f, 8.71f },
-       { 262.17f, 86.17f, 219.06f },
-       { -38.25f, 331.75f, 350.19f },
-       { -384.89f, -114.42f, 453.39f }
-    };
-
-    enemy_spawn(enemy_spawns[0], ENEMY_LIGHT_TURRET, player);
-    enemy_spawn(enemy_spawns[1], ENEMY_HEAVY_TURRET, player);
-    enemy_spawn(enemy_spawns[2], ENEMY_FIGHTER, player);
-    enemy_spawn(enemy_spawns[3], ENEMY_BOMBER, player);
-    enemy_spawn(enemy_spawns[4], ENEMY_INTERCEPTOR, player);
+    for (int i = 0; i < currentLevel->enemyCount; i++) {
+        EnemyType type = enemy_type_from_string(currentLevel->enemies[i].enemyType);
+        enemy_spawn(currentLevel->enemies[i].position, type, player);
+    }
 
     char healthText[64];
 
@@ -148,6 +152,8 @@ int main(int argc, char* argv[])
     }
 
     vkDeviceWaitIdle(gf3d_vgraphics_get_default_logical_device());
+    data_free_level(currentLevel);
+
     //cleanup
     slog("gf3d program end");
     exit(0);

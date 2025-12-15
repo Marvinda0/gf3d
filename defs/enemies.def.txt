@@ -2,16 +2,51 @@
   "light_turret": {
     "name": "Light Turret",
     "health": 50,
-    "speed": 0,
+    "speed": 0.0,
     "fireRate": 0.8,
     "weapon": "machine_gun",
     "model": "models/enemies/turret.obj",
     "scale": [3.0, 3.0, 3.0],
-    "color": [1.0, 1.0, 1.0]
+    "color": [1.0, 1.0, 1.0, 1.0]
+  },
+  "heavy_turret": {
+    "name": "Heavy Turret",
+    "health": 150,
+    "speed": 0.0,
+    "fireRate": 2.0,
+    "weapon": "missile",
+    "model": "models/enemies/turret.obj",
+    "scale": [5.0, 5.0, 5.0],
+    "color": [1.0, 0.0, 0.0, 1.0]
   },
   "fighter": {
     "name": "Fighter",
     "health": 60,
-    ...
+    "speed": 45.0,
+    "fireRate": 1.0,
+    "weapon": "machine_gun",
+    "model": "models/plane1/plane1.obj",
+    "scale": [4.0, 4.0, 4.0],
+    "color": [1.0, 1.0, 1.0, 1.0]
+  },
+  "bomber": {
+    "name": "Bomber",
+    "health": 120,
+    "speed": 30.0,
+    "fireRate": 2.5,
+    "weapon": "missile",
+    "model": "models/plane1/plane1.obj",
+    "scale": [5.0, 5.0, 5.0],
+    "color": [0.0, 0.0, 1.0, 1.0]
+  },
+  "interceptor": {
+    "name": "Interceptor",
+    "health": 40,
+    "speed": 60.0,
+    "fireRate": 1.2,
+    "weapon": "homing",
+    "model": "models/plane1/plane1.obj",
+    "scale": [3.0, 3.0, 3.0],
+    "color": [1.0, 1.0, 0.0, 1.0]
   }
 }
