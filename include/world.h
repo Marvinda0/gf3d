@@ -18,7 +18,7 @@ World *world_load(const char *filename);
 
 void world_free(World* world);
 
-void world_draw(World* world);
+void world_draw(World* world, GFC_Matrix4 modelMat);
 
 World* get_the_world();
 

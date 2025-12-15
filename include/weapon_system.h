@@ -4,6 +4,7 @@
 #include "gf3d_entity.h"
 
 typedef enum {
+    WEAPON_NONE = -1,
     WEAPON_MACHINE_GUN = 0, 
     WEAPON_MISSILE,
     WEAPON_HOMING,

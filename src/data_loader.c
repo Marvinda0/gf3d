@@ -3,10 +3,12 @@
 #include "simple_logger.h"
 #include <string.h>
 
-// Global storage for enemy definitions
+// Global storage 
 EnemyDefinition enemyDefs[ENEMY_TYPE_COUNT];
 
 WeaponDefinition weaponDefs[WEAPON_COUNT];
+
+LoadoutDefinition loadoutDefs[LOADOUT_COUNT];
 
 /**
  * @brief Parse a color array from JSON [r, g, b, a]
@@ -357,4 +359,118 @@ EnemyType enemy_type_from_string(const char* typeStr) {
 
     slog("WARNING: Unknown enemy type '%s', defaulting to light_turret", typeStr);
     return ENEMY_LIGHT_TURRET;
+}
+
+void parse_loadout_definition(SJson* loadoutObj, LoadoutDefinition* def) {
+    const char* name = sj_object_get_string(loadoutObj, "name");
+    if (name) {
+        strncpy(def->name, name, 63);
+        def->name[63] = '\0';
+    }
+
+    const char* description = sj_object_get_string(loadoutObj, "description");
+    if (description) {
+        strncpy(def->description, description, 127);
+        def->description[127] = '\0';
+    }
+
+    sj_object_get_int(loadoutObj, "health", &def->health);
+    sj_object_get_float(loadoutObj, "maxSpeed", &def->maxSpeed);
+    sj_object_get_float(loadoutObj, "minSpeed", &def->minSpeed);
+    sj_object_get_float(loadoutObj, "acceleration", &def->acceleration);
+    sj_object_get_float(loadoutObj, "pitchSensitivity", &def->pitchSensitivity);
+    sj_object_get_float(loadoutObj, "yawSensitivity", &def->yawSensitivity);
+    sj_object_get_float(loadoutObj, "rollSensitivity", &def->rollSensitivity);
+
+    const char* model = sj_object_get_string(loadoutObj, "model");
+    if (model) {
+        strncpy(def->modelPath, model, 127);
+        def->modelPath[127] = '\0';
+    }
+
+    // Parse arrays
+    SJson* scaleArray = sj_object_get_value(loadoutObj, "scale");
+    if (scaleArray) {
+        def->scale = parse_scale_array(scaleArray);
+    }
+
+    SJson* colorArray = sj_object_get_value(loadoutObj, "color");
+    if (colorArray) {
+        def->color = parse_color_array(colorArray);
+    }
+
+    // Parse weapons array
+    SJson* weaponsArray = sj_object_get_value(loadoutObj, "weapons");
+    if (weaponsArray && sj_is_array(weaponsArray)) {
+        def->weaponCount = sj_array_get_count(weaponsArray);
+        if (def->weaponCount > 3) def->weaponCount = 3;
+
+        for (int i = 0; i < def->weaponCount; i++) {
+            SJson* weaponStr = sj_array_get_nth(weaponsArray, i);
+            if (weaponStr && sj_is_string(weaponStr)) {
+                const char* weaponName = sj_get_string_value(weaponStr);
+                if (weaponName) {
+                    strncpy(def->weaponTypes[i], weaponName, 31);
+                    def->weaponTypes[i][31] = '\0';
+                }
+            }
+        }
+    }
+}
+
+void data_load_loadout_definitions() {
+    slog("Loading loadout definitions from defs/loadouts.json...");
+
+    memset(loadoutDefs, 0, sizeof(loadoutDefs));
+
+    SJson* root = sj_load("defs/loadouts.def.txt");
+    if (!root) {
+        slog("ERROR: Failed to load defs/loadouts.json");
+        return;
+    }
+
+    if (!sj_is_object(root)) {
+        slog("ERROR: loadouts.json root is not an object");
+        sj_free(root);
+        return;
+    }
+
+    // Parse each loadout type
+    SJson* scout = sj_object_get_value(root, "scout");
+    if (scout) {
+        parse_loadout_definition(scout, &loadoutDefs[LOADOUT_SCOUT]);
+        slog("Loaded loadout: %s - %s", loadoutDefs[LOADOUT_SCOUT].name, loadoutDefs[LOADOUT_SCOUT].description);
+    }
+
+    SJson* tank = sj_object_get_value(root, "tank");
+    if (tank) {
+        parse_loadout_definition(tank, &loadoutDefs[LOADOUT_TANK]);
+        slog("Loaded loadout: %s - %s", loadoutDefs[LOADOUT_TANK].name, loadoutDefs[LOADOUT_TANK].description);
+    }
+
+    SJson* balanced = sj_object_get_value(root, "balanced");
+    if (balanced) {
+        parse_loadout_definition(balanced, &loadoutDefs[LOADOUT_BALANCED]);
+        slog("Loaded loadout: %s - %s", loadoutDefs[LOADOUT_BALANCED].name, loadoutDefs[LOADOUT_BALANCED].description);
+    }
+
+    sj_free(root);
+    slog("Loadout definitions loaded successfully!");
+}
+
+LoadoutDefinition* data_get_loadout_def(LoadoutType type) {
+    if (type < 0 || type >= LOADOUT_COUNT) {
+        slog("ERROR: Invalid loadout type %d", type);
+        return NULL;
+    }
+    return &loadoutDefs[type];
+}
+
+WeaponType weapon_type_from_string(const char* typeStr) {
+    if (strcmp(typeStr, "machine_gun") == 0) return WEAPON_MACHINE_GUN;
+    if (strcmp(typeStr, "missile") == 0) return WEAPON_MISSILE;
+    if (strcmp(typeStr, "homing") == 0) return WEAPON_HOMING;
+
+    slog("WARNING: Unknown weapon type '%s', returning WEAPON_NONE", typeStr);
+    return WEAPON_NONE;  
 }

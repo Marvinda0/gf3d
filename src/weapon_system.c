@@ -37,7 +37,7 @@ void weapon_loadout_init(WeaponLoadout* loadout, WeaponType w1, WeaponType w2, W
     WeaponType chosen[3] = { w1, w2, w3 };
     for (int i = 0; i < 3; i++)
     {
-        if (chosen[i] < WEAPON_COUNT)
+        if (chosen[i] != WEAPON_NONE && chosen[i] < WEAPON_COUNT)  
         {
             loadout->weapons[i] = weapon_get_stats(chosen[i]);
             loadout->cooldownTimers[i] = 0;

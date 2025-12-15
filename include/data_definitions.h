@@ -37,6 +37,30 @@ typedef struct {
     GFC_Vector3D position;   // Spawn position
 } EnemySpawn;
 
+typedef enum {
+    LOADOUT_SCOUT = 0,
+    LOADOUT_TANK,
+    LOADOUT_BALANCED,
+    LOADOUT_COUNT
+} LoadoutType;
+
+typedef struct {
+    char name[64];              // Display name (e.g., "Scout")
+    char description[128];      // Description
+    int health;                 // Starting health
+    float maxSpeed;             // Maximum speed
+    float minSpeed;             // Minimum speed
+    float acceleration;         // Acceleration rate
+    float pitchSensitivity;     // Pitch control sensitivity
+    float yawSensitivity;       // Yaw control sensitivity
+    float rollSensitivity;      // Roll control sensitivity
+    char weaponTypes[3][32];    // Up to 3 weapon type names
+    int weaponCount;            // Number of weapons
+    char modelPath[128];        // Plane model path
+    GFC_Vector3D scale;         // Model scale
+    GFC_Color color;            // Plane color
+} LoadoutDefinition;
+
 
 /**
  * @brief Load all enemy definitions from defs/enemies.json
@@ -92,4 +116,16 @@ void data_free_level(LevelDefinition* level);
  * @brief Convert enemy type string to enum
  */
 EnemyType enemy_type_from_string(const char* typeStr);
+
+/**
+ * @brief Load all loadout definitions from defs/loadouts.json
+ */
+void data_load_loadout_definitions();
+
+/**
+ * @brief Get loadout definition by type
+ * @param type The loadout type enum
+ * @return Pointer to loadout definition, or NULL if invalid
+ */
+LoadoutDefinition* data_get_loadout_def(LoadoutType type);
 #endif

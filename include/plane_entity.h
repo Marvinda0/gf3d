@@ -7,6 +7,7 @@
 #include "gfc_matrix.h"
 #include "weapon_system.h"
 #include "quaternion.h"
+#include "data_definitions.h"
 
 typedef struct
 {
@@ -37,6 +38,9 @@ typedef struct
 
     // Weapons
     WeaponLoadout loadout;
+
+    float outOfBoundsTimer;
+    int isOutOfBounds;
 
 } PlaneData;
 
@@ -104,4 +108,12 @@ void plane_take_damage(Entity* self, int damage);
 void plane_free(Entity* self);
 
 void plane_draw(Entity* self, GFC_Vector3D lightPos, GFC_Color colorMod);
+
+/**
+ * @brief Spawn player plane with a specific loadout
+ * @param position Starting position
+ * @param loadoutType Which loadout to use
+ * @return Pointer to spawned plane entity
+ */
+Entity* plane_spawn_with_loadout(GFC_Vector3D position, LoadoutType loadoutType);
 #endif // __PLANE_ENTITY_H__

@@ -1,0 +1,104 @@
+{
+  "main": {
+    "title": "FLIGHT COMBAT",
+    "subtitle": "Press ENTER to select | ESC to go back",
+    "items": [
+      {
+        "text": "Start Game",
+        "action": "start_game"
+      },
+      {
+        "text": "Level Select",
+        "action": "level_select"
+      },
+      {
+        "text": "Options",
+        "action": "options"
+      },
+      {
+        "text": "Achievements",
+        "action": "achievements"
+      },
+      {
+        "text": "Level Editor",
+        "action": "level_editor"
+      },
+      {
+        "text": "Quit",
+        "action": "quit"
+      }
+    ]
+  },
+  "level_select": {
+    "title": "SELECT LEVEL",
+    "subtitle": "Choose your mission",
+    "items": [
+      {
+        "text": "Level 1 - First Strike",
+        "action": "load_level_1"
+      },
+      {
+        "text": "Level 2 - Airfield Assault",
+        "action": "load_level_2"
+      },
+      {
+        "text": "Level 3 - Final Confrontation",
+        "action": "load_level_3"
+      },
+      {
+        "text": "Back",
+        "action": "back"
+      }
+    ]
+  },
+  "options": {
+    "title": "OPTIONS",
+    "subtitle": "Coming Soon",
+    "items": [
+      {
+        "text": "Audio Settings (Coming Soon)",
+        "action": "none"
+      },
+      {
+        "text": "Controls (Coming Soon)",
+        "action": "none"
+      },
+      {
+        "text": "Back",
+        "action": "back"
+      }
+    ]
+  },
+  "achievements": {
+    "title": "ACHIEVEMENTS",
+    "subtitle": "Coming Soon",
+    "items": [
+      {
+        "text": "View Achievements (Coming Soon)",
+        "action": "none"
+      },
+      {
+        "text": "Back",
+        "action": "back"
+      }
+    ]
+  },
+  "level_editor": {
+    "title": "LEVEL EDITOR",
+    "subtitle": "Coming Soon",
+    "items": [
+      {
+        "text": "Create New Level (Coming Soon)",
+        "action": "none"
+      },
+      {
+        "text": "Load Level (Coming Soon)",
+        "action": "none"
+      },
+      {
+        "text": "Back",
+        "action": "back"
+      }
+    ]
+  }
+}

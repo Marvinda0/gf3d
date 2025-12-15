@@ -97,13 +97,14 @@ void world_free(World* world)
 	free(world);
 }
 
-void world_draw(World *world) 
+void world_draw(World* world, GFC_Matrix4 modelMat)
 {
-	GFC_Matrix4 modelMat;
 	if (!world) return;
-	gfc_matrix4_identity(modelMat);
-	//scale the world
-	gfc_matrix4_multiply_scalar(modelMat, modelMat, 10);
+	// Use the passed matrix directly
+	slog("world_draw called:");
+	slog("  modelMat[0][0] = %.2f", modelMat[0][0]);
+	slog("  modelMat[1][1] = %.2f", modelMat[1][1]);
+	slog("  modelMat[2][2] = %.2f", modelMat[2][2]);
 	gf3d_mesh_draw(world->mesh, modelMat, GFC_COLOR_WHITE, world->Texture, world->lightpos, world->lightcolor);
 }
 

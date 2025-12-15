@@ -7,6 +7,8 @@
 #include "weapon_system.h"
 #include "quaternion.h"
 #include <math.h>
+#include "data_definitions.h"
+
 
 #define GRAVITY -0.2f
 
@@ -47,6 +49,9 @@ void plane_init_data(PlaneData* data)
 
     // Initialize weapon loadout
     weapon_loadout_init(&data->loadout, WEAPON_MACHINE_GUN, WEAPON_MISSILE, WEAPON_HOMING);
+
+    data->outOfBoundsTimer = 0;
+    data->isOutOfBounds = 0;
 
     slog("Plane initialized with weapons and health");
 }
@@ -93,6 +98,124 @@ Entity* plane_spawn(GFC_Vector3D position, GFC_Color color)
 
     // Place in air
     GFC_Vector3D groundContact;
+    float absoluteMinZ = 2.0f;  
+
+    if (entity_get_floor_position(self, get_the_world(), &groundContact)) {
+        // We have terrain below us
+        float minHeight = groundContact.z + 8.0f;
+        if (self->position.z < minHeight) {
+            self->position.z = minHeight;
+            self->velocity.z = 0;
+        }
+    }
+    else {
+        // No terrain below us - enforce absolute floor
+        if (self->position.z < absoluteMinZ) {
+            self->position.z = absoluteMinZ;
+            self->velocity.z = 0;
+
+            // Also trigger out of bounds if we're past terrain edge
+            data->isOutOfBounds = 1;
+            data->outOfBoundsTimer += 10.0f;  // Instant kill if under map
+        }
+    }
+
+    // Spawn camera
+    GFC_Vector3D camPos = gfc_vector3d(position.x, position.y - 30, position.z + 15);
+    Entity* cam = camera_entity_spawn(camPos, self);
+    if (cam) {
+        data->camera = cam;
+    }
+
+    playerPlane = self;
+    slog("Plane spawned at (%.1f, %.1f, %.1f)", position.x, position.y, position.z);
+    return self;
+}
+
+Entity* plane_spawn_with_loadout(GFC_Vector3D position, LoadoutType loadoutType)
+{
+    // Get loadout definition
+    LoadoutDefinition* loadout = data_get_loadout_def(loadoutType);
+    if (!loadout) {
+        slog("Failed to get loadout definition, using default");
+        return plane_spawn(position, GFC_COLOR_WHITE);
+    }
+
+    Entity* self = entity_new();
+    if (!self) {
+        slog("Failed to create plane entity");
+        return NULL;
+    }
+
+    gfc_line_cpy(self->name, "PlayerPlane");
+    self->mesh = gf3d_mesh_load(loadout->modelPath);
+    self->color = loadout->color;
+    self->position = position;
+    self->rotation = gfc_vector3d(0, 0, 0);
+    self->velocity = gfc_vector3d(0, 0, 0);
+    self->scale = loadout->scale;
+
+    self->bounds = gfc_allocate_array(sizeof(GFC_Box), 1);
+    if (self->bounds) {
+        self->bounds->x = position.x;
+        self->bounds->y = position.y;
+        self->bounds->z = position.z;
+        self->bounds->w = 10.0f;
+        self->bounds->h = 10.0f;
+        self->bounds->d = 10.0f;
+    }
+
+    self->think = plane_think;
+    self->update = plane_update;
+    self->draw = plane_draw;
+    self->free = plane_free;
+
+    self->data = gfc_allocate_array(sizeof(PlaneData), 1);
+    if (!self->data) {
+        slog("Failed to allocate PlaneData");
+        entity_free(self);
+        return NULL;
+    }
+
+    PlaneData* data = (PlaneData*)self->data;
+
+    // Initialize with default values first
+    plane_init_data(data);
+
+    // Override with loadout-specific values
+    data->health = loadout->health;
+    data->maxHealth = loadout->health;
+    data->maxSpeed = loadout->maxSpeed;
+    data->minSpeed = loadout->minSpeed;
+    data->acceleration = loadout->acceleration;
+    data->pitchSensitivity = loadout->pitchSensitivity;
+    data->yawSensitivity = loadout->yawSensitivity;
+    data->rollSensitivity = loadout->rollSensitivity;
+
+    // Set weapons from loadout
+    WeaponType w1 = WEAPON_NONE, w2 = WEAPON_NONE, w3 = WEAPON_NONE;    
+    if (loadout->weaponCount > 0) {
+        w1 = weapon_type_from_string(loadout->weaponTypes[0]);
+    }
+    if (loadout->weaponCount > 1) {
+        w2 = weapon_type_from_string(loadout->weaponTypes[1]);
+    }
+    if (loadout->weaponCount > 2) {
+        w3 = weapon_type_from_string(loadout->weaponTypes[2]);
+    }
+    weapon_loadout_init(&data->loadout, w1, w2, w3);
+    slog("=== LOADOUT DEBUG ===");
+    slog("Loadout: %s", loadout->name);
+    slog("Weapon count from JSON: %d", loadout->weaponCount);
+    slog("w1=%d, w2=%d, w3=%d", w1, w2, w3);
+    slog("Final weaponCount in loadout: %d", data->loadout.weaponCount);
+    for (int i = 0; i < 3; i++) {
+        slog("  Weapon slot %d: type=%d, damage=%d", i, data->loadout.weapons[i].type, data->loadout.weapons[i].damage);
+    }
+    slog("====================");
+
+    // Place in air
+    GFC_Vector3D groundContact;
     if (entity_get_floor_position(self, get_the_world(), &groundContact)) {
         self->position.z = groundContact.z + 30.0f;
     }
@@ -105,7 +228,7 @@ Entity* plane_spawn(GFC_Vector3D position, GFC_Color color)
     }
 
     playerPlane = self;
-    slog("Plane spawned at (%.1f, %.1f, %.1f)", position.x, position.y, position.z);
+    slog("Plane spawned with loadout '%s' at (%.1f, %.1f, %.1f)", loadout->name, position.x, position.y, position.z);
     return self;
 }
 
@@ -307,6 +430,43 @@ void plane_update(Entity* self)
         self->bounds->y = self->position.y;
         self->bounds->z = self->position.z;
     }
+
+    float maxX = 1000.0f;
+    float maxY = 1000.0f;
+    float maxZ = 800.0f;
+    float minZ = 5.0f;
+    float warningTime = 5.0f;  // 5 seconds to return
+
+    int nowOutOfBounds = (fabs(self->position.x) > maxX ||
+        fabs(self->position.y) > maxY ||
+        self->position.z > maxZ ||
+        self->position.z < minZ);
+
+    if (nowOutOfBounds) {
+        if (!data->isOutOfBounds) {
+            // Just left combat area
+            data->isOutOfBounds = 1;
+            data->outOfBoundsTimer = 0;
+            slog("WARNING: Return to combat area!");
+        }
+
+        data->outOfBoundsTimer += 1.0f / 60.0f;  // Increment timer (dt)
+
+        if (data->outOfBoundsTimer > warningTime) {
+            // Kill player
+            slog("PLAYER KILLED: Left combat area");
+            plane_take_damage(self, 9999);
+            return; // Exit early since entity might be freed
+        }
+    }
+    else {
+        // Back in bounds
+        if (data->isOutOfBounds) {
+            slog("Returned to combat area");
+        }
+        data->isOutOfBounds = 0;
+        data->outOfBoundsTimer = 0;
+    }
 }
 
 void plane_free(Entity* self)
@@ -346,7 +506,8 @@ void plane_take_damage(Entity* self, int damage)
 
     if (data->health <= 0) {
         slog("PLAYER DESTROYED!");
-        // TODO
+        plane_free(self);
+        playerPlane = NULL; 
     }
 }
 
@@ -358,7 +519,7 @@ void plane_draw(Entity* self, GFC_Vector3D lightPos, GFC_Color colorMod)
 
     // Extract basis vectors directly from quaternion
     GFC_Vector3D right, forward, up;
-    quaternion_rotate_v(&right, data->orientation, gfc_vector3d(1, 0, 0));
+    quaternion_rotate_v(&right, data->orientation, gfc_vector3d(1, 0, 0));  
     quaternion_rotate_v(&forward, data->orientation, gfc_vector3d(0, 1, 0));
     quaternion_rotate_v(&up, data->orientation, gfc_vector3d(0, 0, 1));
 

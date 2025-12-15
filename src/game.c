@@ -26,6 +26,7 @@
 #include "world.h"
 #include "enemy_entity.h"
 #include "data_definitions.h"
+#include "menu_system.h"
 
 
 extern int __DEBUG;
@@ -47,6 +48,7 @@ int main(int argc, char* argv[])
     //local variables
     GFC_Matrix4 id, terrainMat;
     GFC_Vector3D spawnPos = gfc_vector3d(0, 0, 100);
+    LevelDefinition* currentLevel = NULL;
 
     //initializtion    
     parse_arguments(argc, argv);
@@ -67,6 +69,8 @@ int main(int argc, char* argv[])
     entity_system_init(1000);
     data_load_enemy_definitions();  
     data_load_weapon_definitions(); 
+    data_load_loadout_definitions();    
+
 
     //game init
     srand(SDL_GetTicks());
@@ -80,20 +84,140 @@ int main(int argc, char* argv[])
 
     //World
     World* world = world_load("defs/terrain/terrain.def.txt");
-    gfc_matrix4_multiply_scalar(terrainMat, id, 5);
+    gfc_matrix4_multiply_scalar(terrainMat, id, 30);
 
-    slog("About to load level...");
+    // Initialize menu system
+    if (!menu_system_init("defs/menu/main_menu.def.txt")) {
+        slog("Failed to initialize menu system!");
+        _done = 1;
+        return 0;
+    }
 
-    LevelDefinition* currentLevel = data_load_level("defs/levels/level1.def.txt"); 
-    slog("Level loaded: %p", currentLevel);
-    if (!currentLevel) {    
-        slog("Failed to load level!");  
-        _done = 1;  
-    } else {}
+    // Menu loop
+    MenuAction menuAction = MENU_ACTION_NONE;
+    int selectedLevel = 1; // Default to level 1
+    LoadoutType selectedLoadout = LOADOUT_BALANCED;
 
-    spawnPos = currentLevel->playerSpawn;   
+    while (menu_system_is_active() && !_done) {
+        // Clear screen
+        SDL_Event event;
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_QUIT) {
+                _done = 1;
+                break;
+            }
+        }
 
-    Entity* player = plane_spawn(spawnPos, GFC_COLOR_WHITE);    
+        gfc_input_update();
+
+        // Update menu and get action
+        menuAction = menu_system_update();
+
+        // Handle menu actions
+        if (menuAction == MENU_ACTION_START_GAME) {
+            // Start game with default level and loadout selection
+            menu_system_set_active(0);
+            break;
+        }
+        else if (menuAction == MENU_ACTION_LOAD_LEVEL_1) {
+            selectedLevel = 1;
+            menu_system_set_active(0);
+            break;
+        }
+        else if (menuAction == MENU_ACTION_LOAD_LEVEL_2) {
+            selectedLevel = 2;
+            menu_system_set_active(0);
+            break;
+        }
+        else if (menuAction == MENU_ACTION_LOAD_LEVEL_3) {
+            selectedLevel = 3;
+            menu_system_set_active(0);
+            break;
+        }
+        else if (menuAction == MENU_ACTION_QUIT) {
+            _done = 1;
+            break;
+        }
+
+        // Draw menu
+        gf3d_vgraphics_render_start();
+        menu_system_draw();
+        gf3d_vgraphics_render_end();
+
+        SDL_Delay(16);
+    }
+
+    // Cleanup menu
+    menu_system_close();
+
+    if (_done) {
+        slog("Exiting from menu.");
+        return 0;
+    }
+
+    // Now load the selected level
+    char levelPath[256];
+    sprintf(levelPath, "defs/levels/level%d.def.txt", selectedLevel);
+    currentLevel = data_load_level(levelPath);
+
+    // Then continue with loadout selection (keep your existing code)
+    slog("=== SELECT LOADOUT ===");
+    for (int i = 0; i < LOADOUT_COUNT; i++) {
+        LoadoutDefinition* l = data_get_loadout_def(i);
+        if (l) {
+            slog("  [%d] %s - %s (HP: %d, Speed: %.1f)",
+                i + 1, l->name, l->description, l->health, l->maxSpeed);
+        }
+    }
+    slog("Press 1/2/3 to select loadout...");
+
+    int loadoutSelected = 0;
+    while (!loadoutSelected && !_done) {
+        SDL_Event event;
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_QUIT) {
+                _done = 1;
+                break;
+            }
+            if (event.type == SDL_KEYDOWN) {
+                switch (event.key.keysym.sym) {
+                case SDLK_1:
+                    selectedLoadout = LOADOUT_SCOUT;
+                    loadoutSelected = 1;
+                    slog("Selected: Scout");
+                    break;
+                case SDLK_2:
+                    selectedLoadout = LOADOUT_TANK;
+                    loadoutSelected = 1;
+                    slog("Selected: Tank");
+                    break;
+                case SDLK_3:
+                    selectedLoadout = LOADOUT_BALANCED;
+                    loadoutSelected = 1;
+                    slog("Selected: Balanced");
+                    break;
+                case SDLK_ESCAPE:
+                    _done = 1;
+                    break;
+                }
+            }
+        }
+        SDL_Delay(16);
+    }
+
+    if (_done) {
+        slog("Exiting before game start.");
+        return 0;
+    }
+
+    if (!currentLevel) {
+        slog("Failed to load level!");
+        _done = 1;
+        return 0;
+    }
+    spawnPos = currentLevel->playerSpawn;
+
+    Entity* player = plane_spawn_with_loadout(spawnPos, selectedLoadout);
     if (!player) {  
         slog("Failed to spawn player!");    
         _done = 1;  
@@ -119,8 +243,8 @@ int main(int argc, char* argv[])
 
         gf3d_vgraphics_render_start();
 
-        //3D draws
-        world_draw(world);
+        //3D draws  
+        world_draw(world, terrainMat);
         gf3d_sky_draw(skyMesh, id, GFC_COLOR_WHITE, skyTexture);
         entity_draw_all();
 
@@ -135,11 +259,25 @@ int main(int argc, char* argv[])
             GFC_Color healthColor = pdata->health > 50 ? GFC_COLOR_GREEN :
                 pdata->health > 20 ? GFC_COLOR_YELLOW : GFC_COLOR_RED;
             gf2d_font_draw_line_tag(healthText, FT_H1, healthColor, gfc_vector2d(10, 10));
+
+            // Out of bounds warning - ADD THIS
+            if (pdata->isOutOfBounds) {
+                int timeLeft = (int)(5.0f - pdata->outOfBoundsTimer) + 1;
+                char warningText[128];
+                sprintf(warningText, "!!! RETURN TO COMBAT AREA: %d !!!", timeLeft);
+                gf2d_font_draw_line_tag(warningText, FT_H1, GFC_COLOR_RED, gfc_vector2d(350, 100));
+            }
+        }
+        else if (!player) {
+            // Player is dead - show game over
+            gf2d_font_draw_line_tag("GAME OVER", FT_H1, GFC_COLOR_RED, gfc_vector2d(500, 300));
+            gf2d_font_draw_line_tag("Press ESC to quit", FT_H2, GFC_COLOR_WHITE, gfc_vector2d(450, 350));
         }
 
+
         // Controls
-        gf2d_font_draw_line_tag("WASD: Pitch/Roll | QE: Yaw | Arrows: Speed | Space: Fire",
-            FT_H3, GFC_COLOR_WHITE, gfc_vector2d(10, 700));
+        gf2d_font_draw_line_tag("WS: Pitch| Left/Right Arrows: Roll | A/D: Yaw | Space: Fire",
+            FT_H3, GFC_COLOR_WHITE, gfc_vector2d(10, 650));
 
         // Crosshair
         gf2d_font_draw_line_tag("+", FT_H1, GFC_COLOR_RED, gfc_vector2d(640, 360));
