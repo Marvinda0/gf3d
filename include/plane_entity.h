@@ -103,4 +103,5 @@ void plane_take_damage(Entity* self, int damage);
  */
 void plane_free(Entity* self);
 
+void plane_draw(Entity* self, GFC_Vector3D lightPos, GFC_Color colorMod);
 #endif // __PLANE_ENTITY_H__

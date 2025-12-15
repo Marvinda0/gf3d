@@ -1,0 +1,17 @@
+{
+  "light_turret": {
+    "name": "Light Turret",
+    "health": 50,
+    "speed": 0,
+    "fireRate": 0.8,
+    "weapon": "machine_gun",
+    "model": "models/enemies/turret.obj",
+    "scale": [3.0, 3.0, 3.0],
+    "color": [1.0, 1.0, 1.0]
+  },
+  "fighter": {
+    "name": "Fighter",
+    "health": 60,
+    ...
+  }
+}

@@ -102,7 +102,15 @@ void entity_draw_all() {
 	int i;
 	for (i = 0; i < entity_system.entity_max; i++) {
 		if (!entity_system.entity_list[i]._inuse) continue;
-		entity_draw(&entity_system.entity_list[i], gfc_vector3d(0, 50, 0), GFC_COLOR_WHITE);
+
+		Entity* ent = &entity_system.entity_list[i];
+
+		if (ent->draw) {
+			ent->draw(ent, gfc_vector3d(0, 50, 0), GFC_COLOR_WHITE);
+		}
+		else {
+			entity_draw(ent, gfc_vector3d(0, 50, 0), GFC_COLOR_WHITE);
+		}
 	}
 }
 

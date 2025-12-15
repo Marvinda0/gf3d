@@ -78,7 +78,7 @@ Entity* plane_spawn(GFC_Vector3D position, GFC_Color color)
 
     self->think = plane_think;
     self->update = plane_update;
-    self->draw = entity_draw;
+    self->draw = plane_draw;
     self->free = plane_free;
 
     self->data = gfc_allocate_array(sizeof(PlaneData), 1);
@@ -126,7 +126,7 @@ void plane_handle_controls(Entity* self)
         dx -= data->pitchSensitivity;
     }
 
-    // Roll controls
+    // Roll controls (A/D which you use for YAW/turning)
     if (gfc_input_command_down("roll_left")) {
         dz += data->rollSensitivity;
     }
@@ -134,7 +134,7 @@ void plane_handle_controls(Entity* self)
         dz -= data->rollSensitivity;
     }
 
-    // Yaw controls
+    // Yaw controls (arrow keys)
     if (gfc_input_command_down("turn_left")) {
         dy += data->yawSensitivity;
     }
@@ -145,32 +145,37 @@ void plane_handle_controls(Entity* self)
     // Apply rotations if any input
     if (fabs(dx) > 0.001f || fabs(dy) > 0.001f || fabs(dz) > 0.001f) {
         Quaternion delta;
-        float half;
 
-        // Pitch (X-axis rotation)
+        // Get current local axes
+        GFC_Vector3D right, up, forward;
+        quaternion_rotate_v(&right, data->orientation, gfc_vector3d(1, 0, 0));
+        quaternion_rotate_v(&up, data->orientation, gfc_vector3d(0, 0, 1));
+        quaternion_rotate_v(&forward, data->orientation, gfc_vector3d(0, 1, 0));
+
+        // Pitch around the RIGHT axis (local X) - this is correct for flight
         if (fabs(dx) > 0.001f) {
-            half = dx * 0.5f;
-            delta = quaternion_create(sinf(half), 0, 0, cosf(half));
-            quaternion_multiply_q(&data->orientation, data->orientation, delta);
+            quaternion_from_axis_angle(&delta, right, dx);
+            quaternion_multiply_q(&data->orientation, delta, data->orientation); // WORLD SPACE
         }
 
-        // Yaw (Y-axis rotation)
-        if (fabs(dy) > 0.001f) {
-            half = dy * 0.5f;
-            delta = quaternion_create(0, sinf(half), 0, cosf(half));
-            quaternion_multiply_q(&data->orientation, data->orientation, delta);
-        }
-
-        // Roll (Z-axis rotation)
+        // Yaw around WORLD UP axis (not local up) - this keeps turning natural
         if (fabs(dz) > 0.001f) {
-            half = dz * 0.5f;
-            delta = quaternion_create(0, 0, sinf(half), cosf(half));
-            quaternion_multiply_q(&data->orientation, data->orientation, delta);
+            GFC_Vector3D worldUp = gfc_vector3d(0, 0, 1);
+            quaternion_from_axis_angle(&delta, worldUp, dz);
+            quaternion_multiply_q(&data->orientation, delta, data->orientation); // WORLD SPACE
+        }
+
+        // Roll around arrow keys - around FORWARD axis
+        if (fabs(dy) > 0.001f) {
+            quaternion_from_axis_angle(&delta, forward, dy);
+            quaternion_multiply_q(&data->orientation, delta, data->orientation); // WORLD SPACE
         }
 
         // Normalize to prevent drift
         quaternion_normalize(&data->orientation);
+
     }
+
 
     // Throttle
     if (gfc_input_command_down("throttle_up")) {
@@ -184,13 +189,13 @@ void plane_handle_controls(Entity* self)
 
     // Weapon controls
     if (gfc_input_command_pressed("space")) {
-        weapon_fire(self, 0);  // Fire primary weapon
+        weapon_fire(self, 0);
     }
     if (gfc_input_command_pressed("missile")) {
-        weapon_fire(self, 1);  // Fire secondary weapon
+        weapon_fire(self, 1);
     }
     if (gfc_input_command_pressed("homing")) {
-        weapon_fire(self, 2);  // Fire tertiary weapon
+        weapon_fire(self, 2);
     }
 }
 
@@ -247,22 +252,23 @@ void plane_update_rotation_for_rendering(Entity* self)
 
     Quaternion q = data->orientation;
 
-    // Roll (x-axis rotation)
-    float sinr_cosp = 2.0f * (q.w * q.x + q.y * q.z);
-    float cosr_cosp = 1.0f - 2.0f * (q.x * q.x + q.y * q.y);
-    self->rotation.x = atan2f(sinr_cosp, cosr_cosp);
+    // Get directional vectors
+    GFC_Vector3D forward, right, up;
+    quaternion_rotate_v(&forward, data->orientation, gfc_vector3d(0, 1, 0));
+    quaternion_rotate_v(&right, data->orientation, gfc_vector3d(1, 0, 0));
+    quaternion_rotate_v(&up, data->orientation, gfc_vector3d(0, 0, 1));
 
-    // Pitch (y-axis rotation)
-    float sinp = 2.0f * (q.w * q.y - q.z * q.x);
-    if (fabsf(sinp) >= 1.0f)
-        self->rotation.y = copysignf(GFC_PI / 2.0f, sinp);
-    else
-        self->rotation.y = asinf(sinp);
-
-    // Yaw (z-axis rotation)
+    // Yaw (Z-axis) - use direct quaternion conversion to preserve A/D input
     float siny_cosp = 2.0f * (q.w * q.z + q.x * q.y);
     float cosy_cosp = 1.0f - 2.0f * (q.y * q.y + q.z * q.z);
     self->rotation.z = atan2f(siny_cosp, cosy_cosp);
+
+    // Pitch (Y-axis) - use vector method to avoid gimbal lock during loops
+    float horizontalDist = sqrtf(forward.x * forward.x + forward.y * forward.y);
+    self->rotation.y = atan2f(forward.z, horizontalDist);
+
+    // Roll (X-axis) - use vector method
+    self->rotation.x = atan2f(-right.z, up.z);
 }
 
 void plane_think(Entity* self)
@@ -342,4 +348,55 @@ void plane_take_damage(Entity* self, int damage)
         slog("PLAYER DESTROYED!");
         // TODO
     }
+}
+
+void plane_draw(Entity* self, GFC_Vector3D lightPos, GFC_Color colorMod)
+{
+    if (!self || !self->data) return;
+
+    PlaneData* data = (PlaneData*)self->data;
+
+    // Extract basis vectors directly from quaternion
+    GFC_Vector3D right, forward, up;
+    quaternion_rotate_v(&right, data->orientation, gfc_vector3d(1, 0, 0));
+    quaternion_rotate_v(&forward, data->orientation, gfc_vector3d(0, 1, 0));
+    quaternion_rotate_v(&up, data->orientation, gfc_vector3d(0, 0, 1));
+
+    // Build matrix manually from basis vectors
+    GFC_Matrix4 modelMat;
+    gfc_matrix4_identity(modelMat);
+
+    // Column 0: Right vector (scaled)
+    modelMat[0][0] = right.x * self->scale.x;
+    modelMat[0][1] = right.y * self->scale.x;
+    modelMat[0][2] = right.z * self->scale.x;
+    modelMat[0][3] = 0;
+
+    // Column 1: Forward vector (scaled)
+    modelMat[1][0] = forward.x * self->scale.y;
+    modelMat[1][1] = forward.y * self->scale.y;
+    modelMat[1][2] = forward.z * self->scale.y;
+    modelMat[1][3] = 0;
+
+    // Column 2: Up vector (scaled)
+    modelMat[2][0] = up.x * self->scale.z;
+    modelMat[2][1] = up.y * self->scale.z;
+    modelMat[2][2] = up.z * self->scale.z;
+    modelMat[2][3] = 0;
+
+    // Column 3: Translation
+    modelMat[3][0] = self->position.x;
+    modelMat[3][1] = self->position.y;
+    modelMat[3][2] = self->position.z;
+    modelMat[3][3] = 1;
+
+    // Render
+    gf3d_mesh_draw(
+        self->mesh,
+        modelMat,
+        self->color,
+        self->texture,
+        lightPos,
+        colorMod
+    );
 }
