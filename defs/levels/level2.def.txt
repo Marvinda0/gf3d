@@ -38,10 +38,11 @@
       "type": "interceptor",
       "position": [0.0, 700.0, 350.0]
     }
-  ]
+  ],
   "items": [
      {
       "type": "objective",
       "position": [-150.0, -900.0, 200.0]
     }
+    ]
 }
