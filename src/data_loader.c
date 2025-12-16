@@ -12,6 +12,8 @@ LoadoutDefinition loadoutDefs[LOADOUT_COUNT];
 
 ItemDefinition itemDefs[ITEM_TYPE_COUNT];
 
+PlayerStats playerStats = {0};
+
 /**
  * @brief Parse a color array from JSON [r, g, b, a]
  */
@@ -595,4 +597,114 @@ ItemType item_type_from_string(const char* str) {
     if (strcmp(str, "invincibility") == 0) return ITEM_INVINCIBILITY;  // ADD THIS LINE
     if (strcmp(str, "objective") == 0) return ITEM_OBJECTIVE;
     return ITEM_HEALTH_PACK;
+}
+
+void data_load_player_stats() {
+    slog("Loading player stats from defs/player_stats.def.txt...");
+
+    // Initialize to defaults
+    memset(&playerStats, 0, sizeof(PlayerStats));
+
+    SJson* root = sj_load("defs/player_stats.def.txt");
+    if (!root) {
+        slog("No stats file found, creating new stats");
+        data_save_player_stats();
+        return;
+    }
+
+    // Load values
+    sj_object_get_int(root, "missionsCompleted", &playerStats.missionsCompleted);
+    sj_object_get_int(root, "totalDeaths", &playerStats.totalDeaths);
+    sj_object_get_int(root, "totalKills", &playerStats.totalKills);
+    sj_object_get_int(root, "itemsCollected", &playerStats.itemsCollected);
+    sj_object_get_float(root, "totalPlaytime", &playerStats.totalPlaytime);
+
+    // Load enemy kills
+    SJson* enemiesKilled = sj_object_get_value(root, "enemiesKilled");
+    if (enemiesKilled) {
+        sj_object_get_int(enemiesKilled, "light_turret", &playerStats.lightTurretKills);
+        sj_object_get_int(enemiesKilled, "heavy_turret", &playerStats.heavyTurretKills);
+        sj_object_get_int(enemiesKilled, "fighter", &playerStats.fighterKills);
+        sj_object_get_int(enemiesKilled, "bomber", &playerStats.bomberKills);
+        sj_object_get_int(enemiesKilled, "interceptor", &playerStats.interceptorKills);
+    }
+
+    sj_free(root);
+    slog("Stats loaded: %d missions, %d kills, %d deaths",
+        playerStats.missionsCompleted, playerStats.totalKills, playerStats.totalDeaths);
+}
+
+void data_save_player_stats() {
+    slog("Saving player stats...");
+
+    // Create JSON object
+    SJson* root = sj_object_new();
+    if (!root) {
+        slog("ERROR: Failed to create stats JSON");
+        return;
+    }
+
+    sj_object_insert(root, "missionsCompleted", sj_new_int(playerStats.missionsCompleted));
+    sj_object_insert(root, "totalDeaths", sj_new_int(playerStats.totalDeaths));
+    sj_object_insert(root, "totalKills", sj_new_int(playerStats.totalKills));
+    sj_object_insert(root, "itemsCollected", sj_new_int(playerStats.itemsCollected));
+    sj_object_insert(root, "totalPlaytime", sj_new_float(playerStats.totalPlaytime));
+
+    // Enemy kills object
+    SJson* enemiesKilled = sj_object_new();
+    sj_object_insert(enemiesKilled, "light_turret", sj_new_int(playerStats.lightTurretKills));
+    sj_object_insert(enemiesKilled, "heavy_turret", sj_new_int(playerStats.heavyTurretKills));
+    sj_object_insert(enemiesKilled, "fighter", sj_new_int(playerStats.fighterKills));
+    sj_object_insert(enemiesKilled, "bomber", sj_new_int(playerStats.bomberKills));
+    sj_object_insert(enemiesKilled, "interceptor", sj_new_int(playerStats.interceptorKills));
+    sj_object_insert(root, "enemiesKilled", enemiesKilled);
+
+    // Save to file
+    sj_save(root, "defs/player_stats.def.txt");
+    slog("Stats saved successfully!");
+
+    sj_free(root);
+}
+
+PlayerStats* data_get_player_stats() {
+    return &playerStats;
+}
+
+void stats_add_enemy_kill(EnemyType type) {
+    switch (type) {
+    case ENEMY_LIGHT_TURRET:
+        playerStats.lightTurretKills++;
+        break;
+    case ENEMY_HEAVY_TURRET:
+        playerStats.heavyTurretKills++;
+        break;
+    case ENEMY_FIGHTER:
+        playerStats.fighterKills++;
+        break;
+    case ENEMY_BOMBER:
+        playerStats.bomberKills++;
+        break;
+    case ENEMY_INTERCEPTOR:
+        playerStats.interceptorKills++;
+        break;
+    default:
+        break;
+    }
+    playerStats.totalKills++;
+    data_save_player_stats();
+}
+
+void stats_add_death() {
+    playerStats.totalDeaths++;
+    data_save_player_stats();
+}
+
+void stats_add_mission_complete() {
+    playerStats.missionsCompleted++;
+    data_save_player_stats();
+}
+
+void stats_add_item_collected() {
+    playerStats.itemsCollected++;
+    data_save_player_stats();
 }

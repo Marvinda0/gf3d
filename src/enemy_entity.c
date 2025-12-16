@@ -128,7 +128,7 @@ void enemy_think(Entity* self)
             }
 
             // Damage player
-            plane_take_damage(e->target, 100);
+            plane_take_damage(e->target, 100);      
 
             // Destroy self
             entity_free(self);
@@ -311,6 +311,8 @@ void enemy_take_damage(Entity* self, int damage)
 
     if (e->health <= 0)
     {
+        stats_add_enemy_kill(e->type);
+
         if (!explosionSound) {
             explosionSound = gfc_sound_load("sounds/explosion.wav", 1.0f, -1);
             if (explosionSound) slog("Loaded explosion sound");

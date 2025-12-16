@@ -581,6 +581,7 @@ void plane_take_damage(Entity* self, int damage)
     if (data->health < 0) data->health = 0;
     
     if (data->health <= 0) {
+        stats_add_death();
         if (!playerExplosionSound) {
             playerExplosionSound = gfc_sound_load("sounds/explosion.wav", 1.0f, -1);
         }

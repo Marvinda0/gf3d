@@ -190,4 +190,5 @@ void item_apply_effect(Entity* item, Entity* player) {
         planeData->objectivesCollected++;
         slog("Objective collected! (%d total)", planeData->objectivesCollected);
     }
+    stats_add_item_collected();
 }

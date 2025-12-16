@@ -24,9 +24,9 @@
         "action": "level_editor"
       },
       {
-        "text": "Quit",
-        "action": "quit"
-      }
+      "text": "VIEW STATS",
+      "action": "view_stats"
+    }
     ]
   },
   "level_select": {

@@ -32,6 +32,7 @@ MenuAction menu_action_from_string(const char* actionStr) {
     if (strcmp(actionStr, "options") == 0) return MENU_ACTION_OPTIONS;
     if (strcmp(actionStr, "achievements") == 0) return MENU_ACTION_ACHIEVEMENTS;
     if (strcmp(actionStr, "level_editor") == 0) return MENU_ACTION_LEVEL_EDITOR;
+    if (strcmp(actionStr, "view_stats") == 0) return MENU_ACTION_VIEW_STATS;  
     if (strcmp(actionStr, "back") == 0) return MENU_ACTION_BACK;
     if (strcmp(actionStr, "quit") == 0) return MENU_ACTION_QUIT;
     return MENU_ACTION_NONE;

@@ -181,4 +181,55 @@ ItemDefinition* data_get_item_def(ItemType type);
  * @return ItemType enum value
  */
 ItemType item_type_from_string(const char* str);
+
+/**
+ * @brief Player statistics tracked across sessions
+ */
+typedef struct {
+    int missionsCompleted;
+    int totalDeaths;
+    int lightTurretKills;
+    int heavyTurretKills;
+    int fighterKills;
+    int bomberKills;
+    int interceptorKills;
+    int totalKills;
+    int itemsCollected;
+    float totalPlaytime;
+} PlayerStats;
+
+/**
+ * @brief Load player stats from file
+ */
+void data_load_player_stats();
+
+/**
+ * @brief Save player stats to file
+ */
+void data_save_player_stats();
+
+/**
+ * @brief Get current player stats
+ */
+PlayerStats* data_get_player_stats();
+
+/**
+ * @brief Increment enemy kill count
+ */
+void stats_add_enemy_kill(EnemyType type);
+
+/**
+ * @brief Increment death count
+ */
+void stats_add_death();
+
+/**
+ * @brief Increment mission completed count
+ */
+void stats_add_mission_complete();
+
+/**
+ * @brief Increment items collected
+ */
+void stats_add_item_collected();
 #endif

@@ -118,11 +118,104 @@ void show_mission_briefing(LevelDefinition* level)
     }
 }
 
+//helper function menu
+void show_stats_screen()
+{
+    PlayerStats* stats = data_get_player_stats();
+
+    int done = 0;
+    while (!done) {
+        SDL_Event event;
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_QUIT) {
+                exit(0);
+            }
+            if (event.type == SDL_KEYDOWN) {
+                if (event.key.keysym.sym == SDLK_ESCAPE ||
+                    event.key.keysym.sym == SDLK_SPACE) {
+                    done = 1;
+                }
+            }
+        }
+
+        gfc_input_update();
+        gf3d_vgraphics_render_start();
+
+        // Title (centered)
+        gf2d_font_draw_line_tag("=== PLAYER STATISTICS ===", FT_H1,
+            GFC_COLOR_YELLOW, gfc_vector2d(350, 80));
+
+        // Stats display (centered)
+        char statText[128];
+        int yPos = 180;
+        int lineSpacing = 50;  // Increased from 40
+
+        sprintf(statText, "Missions Completed: %d", stats->missionsCompleted);
+        gf2d_font_draw_line_tag(statText, FT_H2, GFC_COLOR_WHITE, gfc_vector2d(400, yPos));
+        yPos += lineSpacing;
+
+        sprintf(statText, "Total Deaths: %d", stats->totalDeaths);
+        gf2d_font_draw_line_tag(statText, FT_H2, GFC_COLOR_WHITE, gfc_vector2d(450, yPos));
+        yPos += lineSpacing;
+
+        sprintf(statText, "Total Kills: %d", stats->totalKills);
+        gf2d_font_draw_line_tag(statText, FT_H2, GFC_COLOR_GREEN, gfc_vector2d(460, yPos));
+        yPos += lineSpacing + 10;  // Extra space before breakdown
+
+        // Enemy breakdown title (centered)
+        gf2d_font_draw_line_tag("Enemy Kills Breakdown:", FT_H3,
+            GFC_COLOR_CYAN, gfc_vector2d(420, yPos));
+        yPos += 35;
+
+        sprintf(statText, "Light Turrets: %d", stats->lightTurretKills);
+        gf2d_font_draw_line_tag(statText, FT_H3, GFC_COLOR_WHITE, gfc_vector2d(460, yPos));
+        yPos += 30;
+
+        sprintf(statText, "Heavy Turrets: %d", stats->heavyTurretKills);
+        gf2d_font_draw_line_tag(statText, FT_H3, GFC_COLOR_WHITE, gfc_vector2d(460, yPos));
+        yPos += 30;
+
+        sprintf(statText, "Fighters: %d", stats->fighterKills);
+        gf2d_font_draw_line_tag(statText, FT_H3, GFC_COLOR_WHITE, gfc_vector2d(500, yPos));
+        yPos += 30;
+
+        sprintf(statText, "Bombers: %d", stats->bomberKills);
+        gf2d_font_draw_line_tag(statText, FT_H3, GFC_COLOR_WHITE, gfc_vector2d(500, yPos));
+        yPos += 30;
+
+        sprintf(statText, "Interceptors: %d", stats->interceptorKills);
+        gf2d_font_draw_line_tag(statText, FT_H3, GFC_COLOR_WHITE, gfc_vector2d(470, yPos));
+        yPos += 50;  // Extra space after breakdown
+
+        sprintf(statText, "Items Collected: %d", stats->itemsCollected);
+        gf2d_font_draw_line_tag(statText, FT_H2, GFC_COLOR_WHITE, gfc_vector2d(420, yPos));
+        yPos += lineSpacing;
+
+        // Playtime (convert seconds to hours:minutes:seconds)
+        int hours = (int)(stats->totalPlaytime / 3600.0f);
+        int minutes = (int)((stats->totalPlaytime - hours * 3600) / 60.0f);
+        int seconds = (int)(stats->totalPlaytime) % 60;
+        sprintf(statText, "Total Playtime: %02d:%02d:%02d", hours, minutes, seconds);
+        gf2d_font_draw_line_tag(statText, FT_H2, GFC_COLOR_WHITE, gfc_vector2d(400, yPos));
+
+        // Back prompt (centered at bottom)
+        gf2d_font_draw_line_tag("Press ESC or SPACE to return to menu", FT_H3,
+            GFC_COLOR_GREEN, gfc_vector2d(350, 680));
+
+        gf3d_vgraphics_render_end();
+        SDL_Delay(16);
+    }
+}
+
 int main(int argc, char* argv[])
 {
     //local variables
     GFC_Matrix4 id, terrainMat;
     GFC_Vector3D spawnPos = gfc_vector3d(0, 0, 100);
+
+    Uint32 sessionStartTime = 0;
+    Uint32 sessionEndTime = 0;
+
     LevelDefinition* currentLevel = NULL;
 
     //initializtion    
@@ -148,6 +241,7 @@ int main(int argc, char* argv[])
     data_load_weapon_definitions(); 
     data_load_loadout_definitions();  
     data_load_item_definitions();  
+    data_load_player_stats();   
 
     //game init
     srand(SDL_GetTicks());
@@ -216,6 +310,9 @@ int main(int argc, char* argv[])
             selectedLevel = 3;
             menu_system_set_active(0);
             break;
+        }
+        else if (menuAction == MENU_ACTION_VIEW_STATS) {
+            show_stats_screen();
         }
         else if (menuAction == MENU_ACTION_QUIT) {
             _done = 1;
@@ -324,6 +421,9 @@ int main(int argc, char* argv[])
         slog("Failed to spawn player!");    
         _done = 1;  
     }
+
+    sessionStartTime = SDL_GetTicks();
+
 
     for (int i = 0; i < currentLevel->enemyCount; i++) {
         EnemyType type = enemy_type_from_string(currentLevel->enemies[i].enemyType);
@@ -466,6 +566,7 @@ int main(int argc, char* argv[])
                     (timeLeft <= 0);
 
                 if (allMissionsComplete) {
+                    stats_add_mission_complete();
                     gf2d_font_draw_line_tag("=== ALL MISSIONS COMPLETE ===", FT_H1,
                         GFC_COLOR_GREEN, gfc_vector2d(300, 300));
                 }
@@ -491,6 +592,12 @@ int main(int argc, char* argv[])
         if (gfc_input_command_down("exit")) _done = 1;
         game_frame_delay();
     }
+
+    sessionEndTime = SDL_GetTicks();
+    float sessionTime = (sessionEndTime - sessionStartTime) / 1000.0f; // Convert to seconds
+    PlayerStats* stats = data_get_player_stats();
+    stats->totalPlaytime += sessionTime;
+    data_save_player_stats();
 
     vkDeviceWaitIdle(gf3d_vgraphics_get_default_logical_device());
     data_free_level(currentLevel);
