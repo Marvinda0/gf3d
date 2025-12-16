@@ -4,6 +4,11 @@
 #include "simple_logger.h"
 #include "gfc_vector.h"
 #include <math.h>
+#include <SDL_mixer.h>  
+#include "gfc_audio.h"   
+
+static GFC_Sound* hitSound = NULL;
+
 
 Entity* bullet_entity_spawn(GFC_Vector3D pos, GFC_Vector3D forward, Entity* owner, WeaponStats stats)
 {
@@ -16,6 +21,14 @@ Entity* bullet_entity_spawn(GFC_Vector3D pos, GFC_Vector3D forward, Entity* owne
     self->position = pos;
     self->scale = gfc_vector3d(1, 1, 1);
     self->rotation = gfc_vector3d(0, 0, 0);
+
+    //rotations for bullets drawing
+    gfc_vector3d_normalize(&forward);
+    float yaw = atan2f(forward.x, forward.y);
+    float horizontalDist = sqrtf(forward.x * forward.x + forward.y * forward.y);
+    float pitch = atan2f(forward.z, horizontalDist);
+
+    self->rotation = gfc_vector3d(0, pitch, yaw);  
 
     self->data = gfc_allocate_array(sizeof(BulletData), 1);
     if (!self->data) {
@@ -112,6 +125,15 @@ void bullet_check_collisions(Entity* self)
     BulletData* b = (BulletData*)self->data;
     Entity* owner = b->owner;
 
+    int ownerIsEnemy = 0;
+    if (owner) {
+        ownerIsEnemy = (strcmp(owner->name, "Light Turret") == 0 ||
+            strcmp(owner->name, "Heavy Turret") == 0 ||
+            strcmp(owner->name, "Fighter") == 0 ||
+            strcmp(owner->name, "Bomber") == 0 ||
+            strcmp(owner->name, "Interceptor") == 0);
+    }
+
     // Get max entities from system
     Uint32 maxEntities = entity_get_max_count();
 
@@ -136,9 +158,19 @@ void bullet_check_collisions(Entity* self)
 
             int isPlayer = (strcmp(other->name, "PlayerPlane") == 0);
 
+            if (ownerIsEnemy && isEnemy) {
+                continue;  // Skip this collision, no friendly fire
+            }
+
             if (isEnemy) {
-                // Player bullet hit enemy
-                slog(">>> PLAYER BULLET HIT %s! <<<", other->name);
+                slog(">>> BULLET HIT %s! <<<", other->name);
+                if (!hitSound) {
+                    hitSound = gfc_sound_load("sounds/hitmarker.wav", 0.8f, -1);
+                    if (hitSound) slog("Loaded hit sound");
+                }
+                if (hitSound) {
+                    gfc_sound_play(hitSound, 0, 0.6f, -1);
+                }
                 enemy_take_damage(other, b->stats.damage);
                 entity_free(self);
                 return;

@@ -8,6 +8,8 @@
 #include "quaternion.h"
 #include <math.h>
 #include "data_definitions.h"
+#include <SDL_mixer.h>  
+#include "gfc_audio.h"   
 
 #define WORLD_MIN_X -1000.0f
 #define WORLD_MAX_X  1000.0f
@@ -16,6 +18,9 @@
 #define GRAVITY -0.2f
 
 static Entity* playerPlane = NULL;
+
+static GFC_Sound* playerExplosionSound = NULL;
+
 
 void plane_init_data(PlaneData* data)
 {
@@ -574,9 +579,14 @@ void plane_take_damage(Entity* self, int damage)
     }
 
     if (data->health < 0) data->health = 0;
-    slog("PLAYER HIT! Damage=%d | Health=%d/%d", damage, data->health, data->maxHealth);
-
+    
     if (data->health <= 0) {
+        if (!playerExplosionSound) {
+            playerExplosionSound = gfc_sound_load("sounds/explosion.wav", 1.0f, -1);
+        }
+        if (playerExplosionSound) {
+            gfc_sound_play(playerExplosionSound, 0, 1.0f, -1);
+        }
         slog("PLAYER DESTROYED!");
         plane_free(self);
         playerPlane = NULL; 

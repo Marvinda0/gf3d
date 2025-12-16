@@ -1,48 +1,47 @@
 {
-  "name": "Airfield Assault",
+  "name": "Mine Mine",
+  "title": "OPERATION: MINE FIELD",
+  "description": "We are close to the enemy base of the area. They have deployed all their interceptors, making sure anything that apraoches gets blown up. Go out there and sweep those mines clean. Clear the path for our forces, Pilot.",
   "terrain": "models/terrain/terrain.obj",
   "missionType": "destroy_all",
   "playerSpawn": [0.0, -800.0, 200.0],
   "enemies": [
     {
-      "type": "light_turret",
-      "position": [-300.0, 700.0, 50.0]
-    },
-    {
-      "type": "heavy_turret",
-      "position": [300.0, 700.0, 50.0]
-    },
-    {
-      "type": "light_turret",
-      "position": [-500.0, 400.0, 60.0]
-    },
-    {
-      "type": "heavy_turret",
-      "position": [500.0, 400.0, 60.0]
-    },
-    {
-      "type": "fighter",
-      "position": [0.0, 500.0, 280.0]
-    },
-    {
-      "type": "fighter",
-      "position": [-200.0, 300.0, 260.0]
-    },
-    {
-      "type": "fighter",
-      "position": [200.0, 300.0, 260.0]
-    },
-    {
-      "type": "bomber",
-      "position": [0.0, 900.0, 500.0]
+      "type": "interceptor",
+      "position": [0.0, 400.0, 250.0]
     },
     {
       "type": "interceptor",
-      "position": [0.0, 200.0, 220.0]
+      "position": [150.0, 500.0, 280.0]
     },
     {
       "type": "interceptor",
-      "position": [0.0, 600.0, 320.0]
+      "position": [-150.0, 500.0, 280.0]
+    },
+    {
+      "type": "interceptor",
+      "position": [100.0, 300.0, 220.0]
+    },
+    {
+      "type": "interceptor",
+      "position": [-100.0, 300.0, 220.0]
+    },
+    {
+      "type": "interceptor",
+      "position": [200.0, 600.0, 300.0]
+    },
+    {
+      "type": "interceptor",
+      "position": [-200.0, 600.0, 300.0]
+    },
+    {
+      "type": "interceptor",
+      "position": [0.0, 700.0, 350.0]
     }
   ]
+  "items": [
+     {
+      "type": "objective",
+      "position": [-150.0, -900.0, 200.0]
+    }
 }

@@ -22,7 +22,7 @@
   "fighter": {
     "name": "Fighter",
     "health": 60,
-    "speed": 45.0,
+    "speed": 60.0,
     "fireRate": 1.0,
     "weapon": "machine_gun",
     "model": "models/plane1/plane1.obj",
@@ -32,7 +32,7 @@
   "bomber": {
     "name": "Bomber",
     "health": 120,
-    "speed": 30.0,
+    "speed": 50.0,
     "fireRate": 2.5,
     "weapon": "missile",
     "model": "models/plane1/plane1.obj",
@@ -40,13 +40,13 @@
     "color": [0.0, 0.0, 1.0, 1.0]
   },
   "interceptor": {
-    "name": "Interceptor",
-    "health": 40,
-    "speed": 60.0,
-    "fireRate": 1.2,
-    "weapon": "homing",
-    "model": "models/drone.obj",
-    "scale": [3.0, 3.0, 3.0],
-    "color": [1.0, 1.0, 0.0, 1.0]
-  }
+  "name": "Interceptor",
+  "health": 40,
+  "speed": 130.0,
+  "fireRate": 999.0,
+  "weapon": "none",
+  "model": "models/drone.obj",
+  "scale": [3.0, 3.0, 3.0],
+  "color": [1.0, 0.0, 0.0, 1.0]
+}
 }

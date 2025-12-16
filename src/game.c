@@ -45,6 +45,79 @@ void exitGame()
     _done = 1;
 }
 
+//helper fucntion for loading screen:
+void show_mission_briefing(LevelDefinition* level)
+{
+    if (!level) return;
+
+    Sprite* briefingBG = gf2d_sprite_load_image("images/briefing_background.png");
+
+    int done = 0;
+    while (!done) {
+        SDL_Event event;
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_QUIT) {
+                exit(0);
+            }
+            if (event.type == SDL_KEYDOWN) {
+                if (event.key.keysym.sym == SDLK_SPACE ||
+                    event.key.keysym.sym == SDLK_RETURN) {
+                    done = 1;
+                }
+            }
+        }
+
+        gfc_input_update();
+
+        // Render briefing
+        gf3d_vgraphics_render_start();
+
+        if (briefingBG) {
+            gf2d_sprite_draw_image(briefingBG, gfc_vector2d(0, 0));
+        }
+
+        // Mission title
+        gf2d_font_draw_line_tag(level->title, FT_H1,
+            GFC_COLOR_RED,  
+            gfc_vector2d(400, 150));
+
+
+        // Description 
+        char line1[128], line2[128], line3[128], line4[128];
+        strncpy(line1, level->description, 80);
+        line1[80] = '\0';
+
+        strncpy(line2, level->description + 80, 80);
+        line2[80] = '\0';
+
+        strncpy(line3, level->description + 160, 80);
+        line3[80] = '\0';
+
+        strncpy(line4, level->description + 240, 80);
+        line4[80] = '\0';
+
+        // Draw each line
+        int startY = 300;
+        int lineSpacing = 35;
+
+        gf2d_font_draw_line_tag(line1, FT_H3, GFC_COLOR_WHITE, gfc_vector2d(150, startY));
+        gf2d_font_draw_line_tag(line2, FT_H3, GFC_COLOR_WHITE, gfc_vector2d(150, startY + lineSpacing));
+        gf2d_font_draw_line_tag(line3, FT_H3, GFC_COLOR_WHITE, gfc_vector2d(150, startY + lineSpacing * 2));
+        gf2d_font_draw_line_tag(line4, FT_H3, GFC_COLOR_WHITE, gfc_vector2d(150, startY + lineSpacing * 3));
+
+        // Prompt
+        gf2d_font_draw_line_tag("Press SPACE to begin mission", FT_H3,
+            GFC_COLOR_GREEN,
+            gfc_vector2d(450, 600));
+
+        gf3d_vgraphics_render_end();
+        SDL_Delay(16);
+    }
+    if (briefingBG) {
+        gf2d_sprite_free(briefingBG);
+    }
+}
+
 int main(int argc, char* argv[])
 {
     //local variables
@@ -175,6 +248,15 @@ int main(int argc, char* argv[])
     char levelPath[256];
     sprintf(levelPath, "defs/levels/level%d.def.txt", selectedLevel);
     currentLevel = data_load_level(levelPath);
+
+    if (!currentLevel) {
+        slog("Failed to load level!");
+        _done = 1;
+        return 0;
+    }
+
+    show_mission_briefing(currentLevel);    
+
 
     // Then continue with loadout selection (keep your existing code)
     slog("=== SELECT LOADOUT ===");

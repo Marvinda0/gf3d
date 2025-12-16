@@ -122,6 +122,8 @@ WeaponDefinition* data_get_weapon_def(WeaponType type);
  */
 typedef struct {
     char name[64];                    // Level display name
+    char title[128];                  // Level title
+    char description[512];            // Level description
     char terrainPath[128];            // Terrain model path
     char missionType[32];             // "destroy_all", "destroy_objectives", "collect"
     GFC_Vector3D playerSpawn;         // Where player starts

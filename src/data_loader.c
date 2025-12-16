@@ -71,9 +71,6 @@ GFC_Vector3D parse_scale_array(SJson* scaleArray) {
     return scale;
 }
 
-/**
- * @brief Parse a single enemy definition from JSON object
- */
 void parse_enemy_definition(SJson* enemyObj, EnemyDefinition* def) {
     const char* name = sj_object_get_string(enemyObj, "name");
     if (name) {
@@ -281,6 +278,18 @@ LevelDefinition* data_load_level(const char* filepath) {
     if (name) {
         strncpy(level->name, name, 63);
         level->name[63] = '\0';
+    }
+
+    const char* title = sj_object_get_string(root, "title");
+    if (title) {
+        strncpy(level->title, title, 127);
+        level->title[127] = '\0';
+    }
+
+    const char* desc = sj_object_get_string(root, "description");
+    if (desc) {
+        strncpy(level->description, desc, 511);
+        level->description[511] = '\0';
     }
 
     const char* terrain = sj_object_get_string(root, "terrain");

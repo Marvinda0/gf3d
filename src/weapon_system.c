@@ -3,6 +3,11 @@
 #include "plane_entity.h"
 #include "bullet_entity.h"
 #include "data_definitions.h"
+#include <SDL_mixer.h>  
+#include "gfc_audio.h"   
+
+static GFC_Sound* machineGunSound = NULL;
+static GFC_Sound* missileSound = NULL;
 
 WeaponStats weapon_get_stats(WeaponType type)
 {
@@ -116,6 +121,21 @@ void weapon_fire(Entity* shooter, int weaponIndex)
             b->target = nearestEnemy;
             slog("Homing missile locked on to %s at dist %.1f", nearestEnemy->name, nearestDist);
         }
+    }
+    if (!machineGunSound) {
+        machineGunSound = gfc_sound_load("sounds/machine_gun_sound.wav", 1.0f, -1);
+        if (machineGunSound) slog("Loaded machine gun sound");
+    }
+    if (!missileSound) {
+        missileSound = gfc_sound_load("sounds/launch.wav", 1.0f, -1);
+        if (missileSound) slog("Loaded missile sound");
+    }
+    // Play sound based on weapon type
+    if (w->type == WEAPON_MACHINE_GUN && machineGunSound) {
+        gfc_sound_play(machineGunSound, 0, 1.0f, -1);
+    }
+    else if ((w->type == WEAPON_MISSILE || w->type == WEAPON_HOMING) && missileSound) {
+        gfc_sound_play(missileSound, 0, 1.0f, -1);
     }
 
     slog("Player fired weapon %d", weaponIndex);

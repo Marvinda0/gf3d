@@ -1,13 +1,13 @@
 {
   "machine_gun": {
     "name": "Machine Gun",
-    "speed": 400.0,
+    "speed": 700.0,
     "damage": 20,
     "lifetime": 1.2,
     "fireRate": 0.15,
     "homing": false,
     "turnRate": 0.0,
-    "model": "models/bullets/bullet.obj",
+    "model": "models/bullets/bullet1.obj",
     "color": [1.0, 1.0, 1.0, 1.0]
   },
   "missile": {

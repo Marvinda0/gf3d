@@ -1,6 +1,8 @@
 {
   "name": "First Strike",
   "terrain": "models/terrain/terrain.obj",
+  "title": "OPERATION: FIRST STRIKE",
+  "description": "Intelligence reports enemy forces approaching from the valley. Your mission: eliminate all hostile units before they can mount a counterattack. This is your chance to prove yourself, pilot.",
   "missionType": "destroy_all",
   "playerSpawn": [0.0, -800.0, 200.0],
   "enemies": [
