@@ -27,7 +27,9 @@
 #include "enemy_entity.h"
 #include "data_definitions.h"
 #include "menu_system.h"
-
+#include "item_entity.h"
+#include <SDL_mixer.h>  
+#include "gfc_audio.h"   
 
 extern int __DEBUG;
 
@@ -65,12 +67,14 @@ int main(int argc, char* argv[])
     gf2d_font_init("config/font.cfg");
     gf2d_actor_init(100);
 
+    gfc_sound_init_config("config/audio.cfg");
+
     //entity system init
     entity_system_init(1000);
     data_load_enemy_definitions();  
     data_load_weapon_definitions(); 
-    data_load_loadout_definitions();    
-
+    data_load_loadout_definitions();  
+    data_load_item_definitions();  
 
     //game init
     srand(SDL_GetTicks());
@@ -91,6 +95,12 @@ int main(int argc, char* argv[])
         slog("Failed to initialize menu system!");
         _done = 1;
         return 0;
+    }
+    // === LOAD AND PLAY MENU MUSIC ===
+    Mix_Music* menuMusic = Mix_LoadMUS("sounds/menu_song.mp3");
+    if (menuMusic) {
+        slog("Playing menu music");
+        Mix_PlayMusic(menuMusic, -1);  // Loop forever
     }
 
     // Menu loop
@@ -145,6 +155,12 @@ int main(int argc, char* argv[])
         gf3d_vgraphics_render_end();
 
         SDL_Delay(16);
+    }
+
+    if (menuMusic) {
+        Mix_HaltMusic();
+        Mix_FreeMusic(menuMusic);
+        slog("Menu music stopped");
     }
 
     // Cleanup menu
@@ -231,6 +247,10 @@ int main(int argc, char* argv[])
         EnemyType type = enemy_type_from_string(currentLevel->enemies[i].enemyType);
         enemy_spawn(currentLevel->enemies[i].position, type, player);
     }
+    for (int i = 0; i < currentLevel->itemCount; i++) {
+        ItemType type = item_type_from_string(currentLevel->items[i].itemType);
+        item_spawn(currentLevel->items[i].position, type);
+    }
 
     char healthText[64];
 
@@ -253,35 +273,134 @@ int main(int argc, char* argv[])
         entity_draw_all();
 
         //2D draws - HUD
-        // Display player health 
         PlaneData* pdata = NULL;
         if (player && player->data) {
             pdata = (PlaneData*)player->data;
 
-            // Health display
-            sprintf(healthText, "HP: %d / %d", pdata->health, pdata->maxHealth);
-            GFC_Color healthColor = pdata->health > 50 ? GFC_COLOR_GREEN :
-                pdata->health > 20 ? GFC_COLOR_YELLOW : GFC_COLOR_RED;
-            gf2d_font_draw_line_tag(healthText, FT_H1, healthColor, gfc_vector2d(10, 10));
-
-            // Out of bounds warning - ADD THIS
-            if (pdata->isOutOfBounds) {
-                gf2d_font_draw_line_tag("!!! TURN AROUND - EDGE OF MAP !!!",
-                    FT_H1, GFC_COLOR_RED, gfc_vector2d(300, 100));
+            if (pdata->health <= 0) {
+                gf2d_font_draw_line_tag("GAME OVER", FT_H1, GFC_COLOR_RED, gfc_vector2d(500, 300));
+                gf2d_font_draw_line_tag("Press ESC to quit", FT_H2, GFC_COLOR_WHITE, gfc_vector2d(450, 350));
             }
-        }
-        else if (!player) {
-            // Player is dead - show game over
-            gf2d_font_draw_line_tag("GAME OVER", FT_H1, GFC_COLOR_RED, gfc_vector2d(500, 300));
-            gf2d_font_draw_line_tag("Press ESC to quit", FT_H2, GFC_COLOR_WHITE, gfc_vector2d(450, 350));
-        }
+            else {
+                // === LEFT SIDE - PLAYER STATUS ===
 
+                // Health display
+                sprintf(healthText, "HP: %d / %d", pdata->health, pdata->maxHealth);
+                GFC_Color healthColor = pdata->health > 50 ? GFC_COLOR_GREEN :
+                    pdata->health > 20 ? GFC_COLOR_YELLOW : GFC_COLOR_RED;
+                gf2d_font_draw_line_tag(healthText, FT_H1, healthColor, gfc_vector2d(10, 10));
 
-        // Controls
-        gf2d_font_draw_line_tag("WS: Pitch| Left/Right Arrows: Roll | A/D: Yaw | Space: Fire",
-            FT_H3, GFC_COLOR_WHITE, gfc_vector2d(10, 650));
+                // Shield display (blue, below health)
+                if (pdata->shieldHP > 0) {
+                    char shieldText[64];
+                    sprintf(shieldText, "SHIELD: %.0f", pdata->shieldHP);
+                    gf2d_font_draw_line_tag(shieldText, FT_H2,
+                        gfc_color(0.0f, 0.7f, 1.0f, 1.0f),
+                        gfc_vector2d(10, 45));
+                }
 
-        // Crosshair
+                // === ACTIVE POWERUPS (fixed positions) ===
+                if (pdata->speedBoostTimer > 0) {
+                    char boostText[64];
+                    sprintf(boostText, "SPEED: %.1fs", pdata->speedBoostTimer);
+                    gf2d_font_draw_line_tag(boostText, FT_H3,
+                        gfc_color(0.0f, 1.0f, 1.0f, 1.0f),
+                        gfc_vector2d(10, 80));
+                }
+
+                if (pdata->invincibilityTimer > 0) {
+                    char invText[64];
+                    sprintf(invText, "INVINCIBLE: %.1fs", pdata->invincibilityTimer);
+                    gf2d_font_draw_line_tag(invText, FT_H3,
+                        gfc_color(1.0f, 1.0f, 0.0f, 1.0f),
+                        gfc_vector2d(10, 105));
+                }
+
+                if (pdata->shrinkTimer > 0) {
+                    char shrinkText[64];
+                    sprintf(shrinkText, "TINY: %.1fs", pdata->shrinkTimer);
+                    gf2d_font_draw_line_tag(shrinkText, FT_H3,
+                        gfc_color(1.0f, 0.0f, 1.0f, 1.0f),
+                        gfc_vector2d(10, 130));
+                }
+
+                if (pdata->shieldTimer > 0) {
+                    char shieldTimeText[64];
+                    sprintf(shieldTimeText, "SHIELD TIME: %.1fs", pdata->shieldTimer);
+                    gf2d_font_draw_line_tag(shieldTimeText, FT_H3,
+                        gfc_color(0.0f, 1.0f, 0.5f, 1.0f),
+                        gfc_vector2d(10, 155));
+                }
+
+                // === RIGHT SIDE - MISSION OBJECTIVES ===
+
+                // Mission 1: DESTROY ALL
+                int enemiesLeft = 0;
+                for (int i = 0; i < entity_get_max_count(); i++) {
+                    Entity* e = entity_get_by_index(i);
+                    if (!e) continue;
+                    if (strcmp(e->name, "Light Turret") == 0 ||
+                        strcmp(e->name, "Heavy Turret") == 0 ||
+                        strcmp(e->name, "Fighter") == 0 ||
+                        strcmp(e->name, "Bomber") == 0 ||
+                        strcmp(e->name, "Interceptor") == 0) {
+                        enemiesLeft++;
+                    }
+                }
+                char enemyText[64];
+                sprintf(enemyText, "ENEMIES: %d", enemiesLeft);
+                gf2d_font_draw_line_tag(enemyText, FT_H1, GFC_COLOR_RED, gfc_vector2d(900, 10));
+
+                // Mission 2: COLLECT OBJECTIVES
+                int totalObjectives = 0;
+                for (int i = 0; i < currentLevel->itemCount; i++) {
+                    if (strcmp(currentLevel->items[i].itemType, "objective") == 0) {
+                        totalObjectives++;
+                    }
+                }
+                char objText[64];
+                sprintf(objText, "OBJECTIVES: %d/%d", pdata->objectivesCollected, totalObjectives);
+                gf2d_font_draw_line_tag(objText, FT_H1, GFC_COLOR_YELLOW, gfc_vector2d(850, 45));
+
+                // Mission 3: SURVIVE
+                static float survivalTime = 0.0f;
+                float targetTime = 60.0f;
+                survivalTime += 1.0f / 60.0f;
+                float timeLeft = targetTime - survivalTime;
+
+                char timeText[64];
+                if (timeLeft > 0) {
+                    sprintf(timeText, "SURVIVE: %.1fs", timeLeft);
+                    gf2d_font_draw_line_tag(timeText, FT_H1, GFC_COLOR_CYAN, gfc_vector2d(870, 80));
+                }
+                else {
+                    sprintf(timeText, "SURVIVED!");
+                    gf2d_font_draw_line_tag(timeText, FT_H1, GFC_COLOR_GREEN, gfc_vector2d(870, 80));
+                }
+
+                // === CENTER - WIN CONDITIONS ===
+                int allMissionsComplete = (enemiesLeft == 0) &&
+                    (pdata->objectivesCollected >= totalObjectives && totalObjectives > 0) &&
+                    (timeLeft <= 0);
+
+                if (allMissionsComplete) {
+                    gf2d_font_draw_line_tag("=== ALL MISSIONS COMPLETE ===", FT_H1,
+                        GFC_COLOR_GREEN, gfc_vector2d(300, 300));
+                }
+
+                // === OUT OF BOUNDS WARNING ===
+                if (pdata->isOutOfBounds) {
+                    gf2d_font_draw_line_tag("!!! TURN AROUND - EDGE OF MAP !!!",
+                        FT_H1, GFC_COLOR_RED, gfc_vector2d(300, 250));
+                }
+            }
+        }   
+
+        // === BOTTOM - CONTROLS ===
+        gf2d_font_draw_line_tag("WS: PITCH | ARROWS: ROLL | A/D: YAW | SPACE: FIRE",
+            FT_H3, GFC_COLOR_WHITE, gfc_vector2d(10, 690));
+
+        // === CENTER - CROSSHAIR ===
         gf2d_font_draw_line_tag("+", FT_H1, GFC_COLOR_RED, gfc_vector2d(640, 360));
 
         gf2d_mouse_draw();

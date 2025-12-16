@@ -61,6 +61,36 @@ typedef struct {
     GFC_Color color;            // Plane color
 } LoadoutDefinition;
 
+typedef enum {
+    ITEM_HEALTH_PACK = 0,
+    ITEM_SPEED_BOOST,
+    ITEM_WEAPON_UPGRADE,
+    ITEM_SHIELD,
+    ITEM_INVINCIBILITY,   
+    ITEM_OBJECTIVE,
+    ITEM_TYPE_COUNT
+} ItemType;
+
+// Item definition
+typedef struct {
+    char name[64];
+    char type[32];        // "powerup" or "objective"
+    char effect[32];      // "restore_health", "increase_speed", etc.
+    int value;            // Amount to restore/add
+    float duration;       // For temporary effects
+    char modelPath[256];
+    GFC_Vector3D scale;
+    GFC_Color color;
+    float rotationSpeed;
+    float bobHeight;      // How high it bobs up/down
+    float bobSpeed;       // How fast it bobs
+} ItemDefinition;
+
+typedef struct {
+    char itemType[32];
+    GFC_Vector3D position;
+} ItemSpawn;
+
 
 /**
  * @brief Load all enemy definitions from defs/enemies.json
@@ -97,6 +127,8 @@ typedef struct {
     GFC_Vector3D playerSpawn;         // Where player starts
     EnemySpawn* enemies;              // Array of enemy spawns
     int enemyCount;                   // Number of enemies
+    ItemSpawn* items;                 
+    int itemCount;                    
 } LevelDefinition;
 
 /**
@@ -128,4 +160,23 @@ void data_load_loadout_definitions();
  * @return Pointer to loadout definition, or NULL if invalid
  */
 LoadoutDefinition* data_get_loadout_def(LoadoutType type);
+
+/**
+ * @brief Load all item definitions from defs/items.def.txt
+ */
+void data_load_item_definitions();
+
+/**
+ * @brief Get item definition by type
+ * @param type The item type enum
+ * @return Pointer to item definition, or NULL if invalid
+ */
+ItemDefinition* data_get_item_def(ItemType type);
+
+/**
+ * @brief Convert item type string to enum
+ * @param str String like "health_pack", "speed_boost", etc.
+ * @return ItemType enum value
+ */
+ItemType item_type_from_string(const char* str);
 #endif

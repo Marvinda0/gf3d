@@ -83,6 +83,11 @@ Entity* enemy_spawn(GFC_Vector3D pos, EnemyType type, Entity* target)
         self->bounds->h = 10.0f * e->scale.y;
         self->bounds->d = 10.0f * e->scale.z;
     }
+    if (def->speed == 0.0f) {  // Stationary turrets
+        // Make collision box TALL so bullets can hit from above
+        self->bounds->z = self->position.z + 10.0f;  // Center of box higher
+        self->bounds->d = 30.0f;  // Make it tall
+    }
 
     self->think = enemy_think;
     self->update = enemy_update;

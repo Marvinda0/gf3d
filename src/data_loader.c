@@ -10,6 +10,8 @@ WeaponDefinition weaponDefs[WEAPON_COUNT];
 
 LoadoutDefinition loadoutDefs[LOADOUT_COUNT];
 
+ItemDefinition itemDefs[ITEM_TYPE_COUNT];
+
 /**
  * @brief Parse a color array from JSON [r, g, b, a]
  */
@@ -334,9 +336,47 @@ LevelDefinition* data_load_level(const char* filepath) {
             }
         }
     }
+    SJson* itemsArray = sj_object_get_value(root, "items");
+    if (itemsArray && sj_is_array(itemsArray)) {
+        level->itemCount = sj_array_get_count(itemsArray);
+
+        if (level->itemCount > 0) {
+            level->items = (ItemSpawn*)malloc(sizeof(ItemSpawn) * level->itemCount);
+            if (!level->items) {
+                slog("ERROR: Failed to allocate items array");
+                if (level->enemies) free(level->enemies);
+                free(level);
+                sj_free(root);
+                return NULL;
+            }
+
+            // Parse each item
+            for (int i = 0; i < level->itemCount; i++) {
+                SJson* itemObj = sj_array_get_nth(itemsArray, i);
+                if (!itemObj) continue;
+
+                const char* type = sj_object_get_string(itemObj, "type");
+                if (type) {
+                    strncpy(level->items[i].itemType, type, 31);
+                    level->items[i].itemType[31] = '\0';
+                }
+
+                SJson* posArray = sj_object_get_value(itemObj, "position");
+                if (posArray && sj_is_array(posArray)) {
+                    level->items[i].position = parse_scale_array(posArray);
+                }
+            }
+            slog("Loaded %d items", level->itemCount);
+        }
+    }
+    else {
+        level->itemCount = 0;
+        level->items = NULL;
+    }
 
     sj_free(root);
-    slog("Level '%s' loaded: %d enemies", level->name, level->enemyCount);
+    slog("Level '%s' loaded: %d enemies, %d items", level->name, level->enemyCount, level->itemCount);
+
     return level;
 }
 
@@ -345,6 +385,9 @@ void data_free_level(LevelDefinition* level) {
 
     if (level->enemies) {
         free(level->enemies);
+    }
+    if(level->items) {
+        free(level->items);
     }
 
     free(level);
@@ -473,4 +516,74 @@ WeaponType weapon_type_from_string(const char* typeStr) {
 
     slog("WARNING: Unknown weapon type '%s', returning WEAPON_NONE", typeStr);
     return WEAPON_NONE;  
+}
+void data_load_item_definitions() {
+    SJson* root = sj_load("defs/items.def.txt");
+    if (!root) {
+        slog("Failed to load items.def.txt");
+        return;
+    }
+
+    const char* itemNames[] = {
+        "health_pack",
+        "speed_boost",
+        "weapon_upgrade",
+        "shield",
+        "invincibility",
+        "objective"
+    };
+
+    for (int i = 0; i < ITEM_TYPE_COUNT; i++) {
+        SJson* itemObj = sj_object_get_value(root, itemNames[i]);
+        if (!itemObj) {
+            slog("Warning: Item '%s' not found in JSON", itemNames[i]);
+            continue;
+        }
+
+        ItemDefinition* def = &itemDefs[i];
+
+        const char* name = sj_object_get_string(itemObj, "name");
+        if (name) gfc_line_cpy(def->name, name);
+
+        const char* type = sj_object_get_string(itemObj, "type");
+        if (type) strncpy(def->type, type, 31);
+
+        const char* effect = sj_object_get_string(itemObj, "effect");
+        if (effect) strncpy(def->effect, effect, 31);
+
+        sj_get_integer_value(sj_object_get_value(itemObj, "value"), &def->value);
+        sj_get_float_value(sj_object_get_value(itemObj, "duration"), &def->duration);
+
+        const char* model = sj_object_get_string(itemObj, "model");
+        if (model) gfc_line_cpy(def->modelPath, model);
+
+        sj_object_get_vector3d(itemObj, "scale", &def->scale);
+
+        SJson* colorArray = sj_object_get_value(itemObj, "color");
+        def->color = parse_color_array(colorArray);
+
+        sj_get_float_value(sj_object_get_value(itemObj, "rotationSpeed"), &def->rotationSpeed);
+        sj_get_float_value(sj_object_get_value(itemObj, "bobHeight"), &def->bobHeight);
+        sj_get_float_value(sj_object_get_value(itemObj, "bobSpeed"), &def->bobSpeed);
+
+        slog("Loaded item: %s", def->name);
+    }
+
+    sj_free(root);
+}
+
+ItemDefinition* data_get_item_def(ItemType type) {
+    if (type < 0 || type >= ITEM_TYPE_COUNT) return NULL;
+    return &itemDefs[type];
+}
+
+ItemType item_type_from_string(const char* str) {
+    if (!str) return ITEM_HEALTH_PACK;
+    if (strcmp(str, "health_pack") == 0) return ITEM_HEALTH_PACK;
+    if (strcmp(str, "speed_boost") == 0) return ITEM_SPEED_BOOST;
+    if (strcmp(str, "weapon_upgrade") == 0) return ITEM_WEAPON_UPGRADE;
+    if (strcmp(str, "shield") == 0) return ITEM_SHIELD;
+    if (strcmp(str, "invincibility") == 0) return ITEM_INVINCIBILITY;  // ADD THIS LINE
+    if (strcmp(str, "objective") == 0) return ITEM_OBJECTIVE;
+    return ITEM_HEALTH_PACK;
 }

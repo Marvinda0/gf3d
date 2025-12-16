@@ -2,27 +2,65 @@
   "name": "First Strike",
   "terrain": "models/terrain/terrain.obj",
   "missionType": "destroy_all",
-  "playerSpawn": [0.0, 100.0, 500.0],
+  "playerSpawn": [0.0, -800.0, 200.0],
   "enemies": [
     {
       "type": "light_turret",
-      "position": [0.0, 3000.0, 50.0]
+      "position": [0.0, 500.0, 100.0]
     },
     {
       "type": "heavy_turret",
-      "position": [-3000.0, -3000.0, 50.0]
+      "position": [-400.0, -200.0, 100.0]
+    },
+    {
+      "type": "light_turret",
+      "position": [400.0, -200.0, 100.0]
+    },
+    {
+      "type": "heavy_turret",
+      "position": [300.0, 300.0, 100.0]
     },
     {
       "type": "fighter",
-      "position": [3000.0, 0.0, 2000.0]
+      "position": [0.0, 0.0, 300.0]
     },
     {
       "type": "bomber",
-      "position": [0.0, -3000.0, 2500.0]
+      "position": [0.0, 600.0, 400.0]
     },
     {
       "type": "interceptor",
-      "position": [-3000.0, 3000.0, 1500.0]
+      "position": [-300.0, 400.0, 250.0]
+    },
+    {
+      "type": "fighter",
+      "position": [300.0, -400.0, 280.0]
+    }
+  ],
+  "items": [
+    {
+      "type": "health_pack",
+      "position": [150.0, -700.0, 200.0]
+    },
+    {
+      "type": "speed_boost",
+      "position": [-150.0, -700.0, 200.0]
+    },
+    {
+      "type": "weapon_upgrade",
+      "position": [300.0, -800.0, 250.0]
+    },
+    {
+      "type": "shield",
+      "position": [-300.0, -800.0, 250.0]
+    },
+    {
+      "type": "invincibility",
+      "position": [-450.0, -900.0, 200.0]
+    },
+    {
+      "type": "objective",
+      "position": [-150.0, -900.0, 200.0]
     }
   ]
 }

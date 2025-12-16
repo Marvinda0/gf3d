@@ -1,0 +1,80 @@
+{
+  "health_pack": {
+    "name": "Health Pack",
+    "type": "powerup",
+    "effect": "restore_health",
+    "value": 100,
+    "duration": 0.0,
+    "model": "models/heart.obj",
+    "scale": [7.0, 7.0, 7.0],
+    "color": [1.0, 0.0, 0.0, 1.0],
+    "rotationSpeed": 1.0,
+    "bobHeight": 3.0,
+    "bobSpeed": 2.0
+  },
+  "speed_boost": {
+    "name": "Speed Boost",
+    "type": "powerup",
+    "effect": "increase_speed",
+    "value": 5,
+    "duration": 10.0,
+    "model": "models/fire.obj",
+    "scale": [5.0, 5.0, 5.0],
+    "color": [0.0, 0.5, 1.0, 1.0],
+    "rotationSpeed": 2.0,
+    "bobHeight": 3.0,
+    "bobSpeed": 3.0
+  },
+  "weapon_upgrade": {
+    "name": "Shrink Powerup",
+    "type": "powerup",
+    "effect": "shrink",
+    "value": 0,
+    "duration": 8.0,
+    "model": "models/ammo.obj",
+    "scale": [16.0, 16.0, 16.0],
+    "color": [1.0, 1.0, 0.0, 1.0],
+    "rotationSpeed": 3.0,
+    "bobHeight": 3.0,
+    "bobSpeed": 4.0
+  },
+  "shield": {
+    "name": "Shield",
+    "type": "powerup",
+    "effect": "add_shield",
+    "value": 200,
+    "duration": 15.0,
+    "model": "models/shield.obj",
+    "scale": [6.0, 6.0, 6.0],
+    "color": [0.0, 1.0, 0.5, 1.0],
+    "rotationSpeed": 1.0,
+    "bobHeight": 3.0,
+    "bobSpeed": 2.0
+  },
+  "invincibility": {
+    "name": "Invincibility Star",
+    "type": "powerup",
+    "effect": "invincibility",
+    "value": 0,
+    "duration": 5.0,
+    "model": "models/star.obj",
+    "scale": [1.5, 1.5, 1.5],
+    "color": [1.0, 1.0, 1.0, 1.0],
+    "rotationSpeed": 4.0,
+    "bobHeight": 4.0,
+    "bobSpeed": 5.0
+  },
+  "objective": {
+    "name": "Mission Objective",
+    "type": "objective",
+    "effect": "collect",
+    "value": 1,
+    "duration": 0.0,
+    "model": "models/files.obj",
+    "scale": [6.0, 6.0, 6.0],
+    "color": [1.0, 0.5, 0.0, 1.0],
+    "rotationSpeed": 0.5,
+    "bobHeight": 4.0,
+    "bobSpeed": 1.5
+  }
+}

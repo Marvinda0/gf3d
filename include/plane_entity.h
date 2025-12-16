@@ -42,6 +42,14 @@ typedef struct
     float outOfBoundsTimer;
     int isOutOfBounds;
 
+    float speedBoostTimer;
+    float speedBoostAmount;
+    float shrinkTimer;
+    float shieldHP;
+    float shieldTimer;
+    float invincibilityTimer;
+    int objectivesCollected;
+
 } PlaneData;
 
 /**

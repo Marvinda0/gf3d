@@ -25,7 +25,7 @@
     "yawSensitivity": 0.03,
     "rollSensitivity": 0.05,
     "weapons": ["missile", "homing"],
-    "model": "models/plane1/plane1.obj",
+    "model": "models/plane1/jet03.obj",
     "scale": [2.0, 2.0, 2.0],
     "color": [0.2, 1.0, 0.2, 1.0]
   },

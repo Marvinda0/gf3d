@@ -2,51 +2,55 @@
   "name": "Final Confrontation",
   "terrain": "models/terrain/terrain.obj",
   "missionType": "destroy_all",
-  "playerSpawn": [
-    0,
-    -6000,
-    500
-  ],
+  "playerSpawn": [0.0, -800.0, 200.0],
   "enemies": [
     {
       "type": "light_turret",
-      "position": [
-        6000,
-        6000,
-        50
-      ]
+      "position": [900.0, 900.0, 50.0]
     },
     {
       "type": "heavy_turret",
-      "position": [
-        -6000,
-        -6000,
-        50
-      ]
+      "position": [-900.0, -900.0, 50.0]
+    },
+    {
+      "type": "light_turret",
+      "position": [-900.0, 900.0, 60.0]
+    },
+    {
+      "type": "heavy_turret",
+      "position": [900.0, -900.0, 60.0]
     },
     {
       "type": "fighter",
-      "position": [
-        -5000,
-        5000,
-        3000
-      ]
+      "position": [-700.0, 700.0, 400.0]
+    },
+    {
+      "type": "fighter",
+      "position": [700.0, -700.0, 380.0]
+    },
+    {
+      "type": "fighter",
+      "position": [0.0, 0.0, 300.0]
     },
     {
       "type": "bomber",
-      "position": [
-        5000,
-        -5000,
-        3500
-      ]
+      "position": [800.0, 800.0, 550.0]
+    },
+    {
+      "type": "bomber",
+      "position": [-800.0, -800.0, 520.0]
     },
     {
       "type": "interceptor",
-      "position": [
-        0,
-        0,
-        2000
-      ]
+      "position": [0.0, 800.0, 280.0]
+    },
+    {
+      "type": "interceptor",
+      "position": [-600.0, 0.0, 260.0]
+    },
+    {
+      "type": "interceptor",
+      "position": [600.0, 400.0, 290.0]
     }
   ]
 }

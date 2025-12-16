@@ -1,7 +1,7 @@
 {
   "main": {
-    "title": "FLIGHT COMBAT",
-    "subtitle": "Press ENTER to select | ESC to go back",
+    "title": "Bottom Gun: The game",
+    "subtitle": "Press ENTER to select",
     "items": [
       {
         "text": "Start Game",

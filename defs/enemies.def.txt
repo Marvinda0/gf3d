@@ -45,7 +45,7 @@
     "speed": 60.0,
     "fireRate": 1.2,
     "weapon": "homing",
-    "model": "models/plane1/plane1.obj",
+    "model": "models/drone.obj",
     "scale": [3.0, 3.0, 3.0],
     "color": [1.0, 1.0, 0.0, 1.0]
   }

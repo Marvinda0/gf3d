@@ -56,6 +56,14 @@ void plane_init_data(PlaneData* data)
     data->outOfBoundsTimer = 0;
     data->isOutOfBounds = 0;
 
+    data->speedBoostTimer = 0;
+    data->speedBoostAmount = 0;
+    data->shrinkTimer = 0;
+    data->shieldHP = 0;
+    data->shieldTimer = 0;
+    data->invincibilityTimer = 0;
+    data->objectivesCollected = 0;
+
     slog("Plane initialized with weapons and health");
 }
 
@@ -118,7 +126,6 @@ Entity* plane_spawn(GFC_Vector3D position, GFC_Color color)
             self->velocity.z = 0;
 
             // Also trigger out of bounds if we're past terrain edge
-            data->isOutOfBounds = 1;
             data->outOfBoundsTimer += 10.0f;  // Instant kill if under map
         }
     }
@@ -332,7 +339,10 @@ void plane_apply_physics(Entity* self)
 {
     if (!self || !self->data) return;
     PlaneData* data = (PlaneData*)self->data;
-
+    float effectiveMaxSpeed = data->maxSpeed;
+    if (data->speedBoostTimer > 0) {
+        effectiveMaxSpeed += data->speedBoostAmount;
+    }
     // Adjust speed
     if (data->speed < data->targetSpeed) {
         data->speed += data->acceleration;
@@ -342,6 +352,9 @@ void plane_apply_physics(Entity* self)
         data->speed -= data->acceleration;
         if (data->speed < data->targetSpeed) data->speed = data->targetSpeed;
     }
+    if (data->targetSpeed > effectiveMaxSpeed) data->targetSpeed = effectiveMaxSpeed;
+    if (data->speed > effectiveMaxSpeed) data->speed = effectiveMaxSpeed;
+    if (data->speed < data->minSpeed) data->speed = data->minSpeed;
 
     data->isStalling = (data->speed < data->minSpeed); // check for stall (should only happen at low speed)
 
@@ -408,14 +421,24 @@ void plane_think(Entity* self)
 
 void plane_update(Entity* self)
 {
+    int onGround = 0;
     if (!self || !self->data) return;
     PlaneData* data = (PlaneData*)self->data;
 
     plane_apply_physics(self);
+    if (data->speedBoostTimer > 0) {
+        data->speedBoostTimer -= 1.0f / 60.0f;
+        // Boost velocity by 1.5x
+        gfc_vector3d_scale(self->velocity, self->velocity, 1.5f);
+    }
     plane_update_rotation_for_rendering(self);
     weapon_update_cooldowns(&data->loadout, 1.0f / 60.0f);
 
     // Apply movement
+    if (onGround) {
+        self->velocity.x = 0;
+        self->velocity.y = 0;
+    }
     gfc_vector3d_add(self->position, self->position, self->velocity);
 
     // === WORLD BOUNDS CLAMP ===
@@ -445,12 +468,12 @@ void plane_update(Entity* self)
     // === GROUND COLLISION ===
     GFC_Vector3D groundContact;
     if (entity_get_floor_position(self, get_the_world(), &groundContact)) {
-        float minHeight = groundContact.z + 1.0f;  
-        if (self->position.z < minHeight) {
-            self->position.z = minHeight;
-            if (self->velocity.z < 0) {
-                self->velocity.z = 0;  // Stop falling
-            }
+        float groundZ = groundContact.z + 1.0f;
+        if (self->position.z <= groundZ) {
+            onGround = 1;
+            self->position.z = groundZ;
+            self->velocity.z = 0;
+            
         }
 
         // We have floor - clear warning
@@ -468,6 +491,33 @@ void plane_update(Entity* self)
         self->bounds->x = self->position.x;
         self->bounds->y = self->position.y;
         self->bounds->z = self->position.z;
+    }
+    float dt = 1.0f / 60.0f;
+    if (data->speedBoostTimer > 0) {
+        data->speedBoostTimer -= dt;
+        data->maxSpeed = 15.0f + data->speedBoostAmount;  // Boost speed
+    }
+    else {
+        data->maxSpeed = 15.0f;  // Normal speed
+    }
+
+    if (data->shrinkTimer > 0) {
+        data->shrinkTimer -= dt;
+        self->scale = gfc_vector3d(0.5, 0.5, 0.5);  // Shrink
+    }
+    else {
+        self->scale = gfc_vector3d(1.0, 1.0, 1.0);  // Normal size
+    }
+
+    if (data->shieldTimer > 0) {
+        data->shieldTimer -= dt;
+    }
+    else {
+        data->shieldHP = 0;  // Shield expired
+    }
+
+    if (data->invincibilityTimer > 0) {
+        data->invincibilityTimer -= dt;
     }
 }
 
@@ -499,11 +549,31 @@ GFC_Vector3D plane_get_forward()
 void plane_take_damage(Entity* self, int damage)
 {
     if (!self || !self->data) return;
-
     PlaneData* data = (PlaneData*)self->data;
-    data->health -= damage;
-    if (data->health < 0) data->health = 0;
+    if (data->invincibilityTimer > 0) {
+        slog("INVINCIBLE! Damage blocked");
+        return;
+    }
 
+    // Check shield
+    if (data->shieldHP > 0) {
+        data->shieldHP -= damage;
+        if (data->shieldHP < 0) {
+            int overflow = -(int)data->shieldHP;
+            data->shieldHP = 0;
+            data->health -= overflow;
+            slog("Shield broken! Overflow damage: %d", overflow);
+        }
+        else {
+            slog("Shield absorbed damage! Shield: %.0f HP", data->shieldHP);
+            return;
+        }
+    }
+    else {
+        data->health -= damage;
+    }
+
+    if (data->health < 0) data->health = 0;
     slog("PLAYER HIT! Damage=%d | Health=%d/%d", damage, data->health, data->maxHealth);
 
     if (data->health <= 0) {
@@ -518,6 +588,16 @@ void plane_draw(Entity* self, GFC_Vector3D lightPos, GFC_Color colorMod)
     if (!self || !self->data) return;
 
     PlaneData* data = (PlaneData*)self->data;
+
+    GFC_Color planeColor = self->color;
+    if (data->invincibilityTimer > 0) {
+        // Flash between white and original color every 0.1 seconds
+        int flashFrame = (int)(data->invincibilityTimer * 10.0f);
+        if (flashFrame % 2 == 0) {
+            planeColor = gfc_color(1.0f, 1.0f, 1.0f, 1.0f);  // White
+        }
+    }
+
 
     // Extract basis vectors directly from quaternion
     GFC_Vector3D right, forward, up;
@@ -557,7 +637,7 @@ void plane_draw(Entity* self, GFC_Vector3D lightPos, GFC_Color colorMod)
     gf3d_mesh_draw(
         self->mesh,
         modelMat,
-        self->color,
+        planeColor,
         self->texture,
         lightPos,
         colorMod
