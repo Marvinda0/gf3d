@@ -395,7 +395,7 @@
     <ClCompile Include="..\..\src\data_loader.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\meny_system.c">
+    <ClCompile Include="..\..\src\menu_system.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

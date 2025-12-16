@@ -22,5 +22,5 @@ void world_draw(World* world, GFC_Matrix4 modelMat);
 
 World* get_the_world();
 
-Uint8 world_edge_test(World* world, GFC_Vector3D start, GFC_Vector3D end, GFC_Vector3D* contact);
+Uint8 world_edge_test(World* world, GFC_Vector3D start, GFC_Vector3D end, GFC_Vector3D* contact, float scale);
 #endif

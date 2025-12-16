@@ -9,7 +9,10 @@
 #include <math.h>
 #include "data_definitions.h"
 
-
+#define WORLD_MIN_X -1000.0f
+#define WORLD_MAX_X  1000.0f
+#define WORLD_MIN_Y -1000.0f
+#define WORLD_MAX_Y  1000.0f
 #define GRAVITY -0.2f
 
 static Entity* playerPlane = NULL;
@@ -102,7 +105,7 @@ Entity* plane_spawn(GFC_Vector3D position, GFC_Color color)
 
     if (entity_get_floor_position(self, get_the_world(), &groundContact)) {
         // We have terrain below us
-        float minHeight = groundContact.z + 8.0f;
+        float minHeight = groundContact.z + 1.0f;
         if (self->position.z < minHeight) {
             self->position.z = minHeight;
             self->velocity.z = 0;
@@ -148,7 +151,10 @@ Entity* plane_spawn_with_loadout(GFC_Vector3D position, LoadoutType loadoutType)
     }
 
     gfc_line_cpy(self->name, "PlayerPlane");
+    slog("DEBUG: About to load mesh: %s", loadout->modelPath);
     self->mesh = gf3d_mesh_load(loadout->modelPath);
+    slog("DEBUG: Mesh loaded: %p", self->mesh);
+
     self->color = loadout->color;
     self->position = position;
     self->rotation = gfc_vector3d(0, 0, 0);
@@ -407,21 +413,54 @@ void plane_update(Entity* self)
 
     plane_apply_physics(self);
     plane_update_rotation_for_rendering(self);
-
-    // Update weapon cooldowns
     weapon_update_cooldowns(&data->loadout, 1.0f / 60.0f);
 
+    // Apply movement
     gfc_vector3d_add(self->position, self->position, self->velocity);
 
-    // Ground collision
+    // === WORLD BOUNDS CLAMP ===
+    if (self->position.x < WORLD_MIN_X) {
+        self->position.x = WORLD_MIN_X;
+        self->velocity.x = 0;
+    }
+    else if (self->position.x > WORLD_MAX_X) {
+        self->position.x = WORLD_MAX_X;
+        self->velocity.x = 0;
+    }
+
+    if (self->position.y < WORLD_MIN_Y) {
+        self->position.y = WORLD_MIN_Y;
+        self->velocity.y = 0;
+    }
+    else if (self->position.y > WORLD_MAX_Y) {
+        self->position.y = WORLD_MAX_Y;
+        self->velocity.y = 0;
+    }
+
+    // Absolute floor failsafe
+    if (self->position.z < -10.0f) {
+        self->position.z = 0;
+        self->velocity.z = 0;
+    }
+    // === GROUND COLLISION ===
     GFC_Vector3D groundContact;
     if (entity_get_floor_position(self, get_the_world(), &groundContact)) {
-        if (self->position.z < groundContact.z + 2.0f) {
-            self->position.z = groundContact.z + 2.0f;
+        float minHeight = groundContact.z + 1.0f;  
+        if (self->position.z < minHeight) {
+            self->position.z = minHeight;
             if (self->velocity.z < 0) {
-                self->velocity.z = -self->velocity.z * 0.3f;
+                self->velocity.z = 0;  // Stop falling
             }
         }
+
+        // We have floor - clear warning
+        data->isOutOfBounds = 0;
+    }
+    else {
+        // No floor detected (likely near edge)
+        data->isOutOfBounds =
+            (self->position.x <= WORLD_MIN_X || self->position.x >= WORLD_MAX_X ||
+                self->position.y <= WORLD_MIN_Y || self->position.y >= WORLD_MAX_Y);
     }
 
     // Update bounds
@@ -429,43 +468,6 @@ void plane_update(Entity* self)
         self->bounds->x = self->position.x;
         self->bounds->y = self->position.y;
         self->bounds->z = self->position.z;
-    }
-
-    float maxX = 1000.0f;
-    float maxY = 1000.0f;
-    float maxZ = 800.0f;
-    float minZ = 5.0f;
-    float warningTime = 5.0f;  // 5 seconds to return
-
-    int nowOutOfBounds = (fabs(self->position.x) > maxX ||
-        fabs(self->position.y) > maxY ||
-        self->position.z > maxZ ||
-        self->position.z < minZ);
-
-    if (nowOutOfBounds) {
-        if (!data->isOutOfBounds) {
-            // Just left combat area
-            data->isOutOfBounds = 1;
-            data->outOfBoundsTimer = 0;
-            slog("WARNING: Return to combat area!");
-        }
-
-        data->outOfBoundsTimer += 1.0f / 60.0f;  // Increment timer (dt)
-
-        if (data->outOfBoundsTimer > warningTime) {
-            // Kill player
-            slog("PLAYER KILLED: Left combat area");
-            plane_take_damage(self, 9999);
-            return; // Exit early since entity might be freed
-        }
-    }
-    else {
-        // Back in bounds
-        if (data->isOutOfBounds) {
-            slog("Returned to combat area");
-        }
-        data->isOutOfBounds = 0;
-        data->outOfBoundsTimer = 0;
     }
 }
 

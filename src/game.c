@@ -84,7 +84,7 @@ int main(int argc, char* argv[])
 
     //World
     World* world = world_load("defs/terrain/terrain.def.txt");
-    gfc_matrix4_multiply_scalar(terrainMat, id, 30);
+    gfc_matrix4_multiply_scalar(terrainMat, id, 1);
 
     // Initialize menu system
     if (!menu_system_init("defs/menu/main_menu.def.txt")) {
@@ -166,9 +166,13 @@ int main(int argc, char* argv[])
         LoadoutDefinition* l = data_get_loadout_def(i);
         if (l) {
             slog("  [%d] %s - %s (HP: %d, Speed: %.1f)",
-                i + 1, l->name, l->description, l->health, l->maxSpeed);
+                i + 1,
+                l->name ? l->name : "UNKNOWN",  
+                l->description ? l->description : "UNKNOWN",  
+                l->health,
+                l->maxSpeed);
         }
-    }
+    }   
     slog("Press 1/2/3 to select loadout...");
 
     int loadoutSelected = 0;
@@ -262,10 +266,8 @@ int main(int argc, char* argv[])
 
             // Out of bounds warning - ADD THIS
             if (pdata->isOutOfBounds) {
-                int timeLeft = (int)(5.0f - pdata->outOfBoundsTimer) + 1;
-                char warningText[128];
-                sprintf(warningText, "!!! RETURN TO COMBAT AREA: %d !!!", timeLeft);
-                gf2d_font_draw_line_tag(warningText, FT_H1, GFC_COLOR_RED, gfc_vector2d(350, 100));
+                gf2d_font_draw_line_tag("!!! TURN AROUND - EDGE OF MAP !!!",
+                    FT_H1, GFC_COLOR_RED, gfc_vector2d(300, 100));
             }
         }
         else if (!player) {

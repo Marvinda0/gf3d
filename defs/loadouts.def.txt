@@ -10,7 +10,7 @@
     "yawSensitivity": 0.05,
     "rollSensitivity": 0.08,
     "weapons": ["machine_gun", "homing"],
-    "model": "models/plane1/plane1.obj",
+    "model": "models/plane1/jet02.obj",
     "scale": [0.5, 0.5, 0.5],
     "color": [0.2, 0.8, 1.0, 1.0]
   },

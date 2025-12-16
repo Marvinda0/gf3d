@@ -19,39 +19,42 @@ World* world_new()
 	return world;
 }
 
-Uint8 world_edge_test(World* world, GFC_Vector3D start, GFC_Vector3D end, GFC_Vector3D* contact)
+Uint8 world_edge_test(World* world, GFC_Vector3D start, GFC_Vector3D end, GFC_Vector3D* contact, float scale)
 {
 	int i, j, c, d;
 	GFC_Edge3D edge;
 	GFC_Triangle3D t;
-	MeshPrimitive *primitive;
-	if (!world)return NULL;
+	MeshPrimitive* primitive;
+	if (!world)return 0;  // Changed NULL to 0
 
-	edge = gfc_edge3d_from_vectors(start, end); // Edge from start to end of the world
-	c = gfc_list_count(world->mesh->primitives); // Count of primitives in the mesh
-	
+	edge = gfc_edge3d_from_vectors(start, end);
+	c = gfc_list_count(world->mesh->primitives);
+
 	for (i = 0; i < c; i++) {
-		primitive = gfc_list_get_nth(world->mesh->primitives, i); // we get the primitive at index i of the mesh 
+		primitive = gfc_list_get_nth(world->mesh->primitives, i);
 
-		if(!primitive)continue; // if primitive is null, continue since there is nothing to test
+		if (!primitive)continue;
 
-		d = primitive->objData->face_count; // get the face count of the primitive
+		d = primitive->objData->face_count;
 
 		for (j = 0; j < d; j++) {
-			// we make t a triangle from the face vertices of the primitive
-		
-			t.a = primitive->objData->faceVertices[primitive->objData->outFace[j].verts[0]].vertex; // get vertex a of the triangle
-			t.b = primitive->objData->faceVertices[primitive->objData->outFace[j].verts[1]].vertex; // get vertex b of the triangle
-			t.c = primitive->objData->faceVertices[primitive->objData->outFace[j].verts[2]].vertex	; // get vertex c of the triangle
+			t.a = primitive->objData->faceVertices[primitive->objData->outFace[j].verts[0]].vertex;
+			t.b = primitive->objData->faceVertices[primitive->objData->outFace[j].verts[1]].vertex;
+			t.c = primitive->objData->faceVertices[primitive->objData->outFace[j].verts[2]].vertex;
+
+			// Scale collision vertices to match visual mesh
+			gfc_vector3d_scale(t.a, t.a, scale);
+			gfc_vector3d_scale(t.b, t.b, scale);
+			gfc_vector3d_scale(t.c, t.c, scale);
+
 			if (gfc_trigfc_angle_edge_test(edge, t, contact)) {
-				contact->z += 4.9f;
-				return 1; // if there is a collision, return 1
-			}
-			
+				//contact->z += 4.9f;
+				return 1;
 			}
 		}
-		return 0; // no collision detected	
 	}
+	return 0;
+}
 
 World* world_load(const char* filename)
 {

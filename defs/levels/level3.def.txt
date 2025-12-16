@@ -1,28 +1,52 @@
 {
-  "name": "First Strike",
+  "name": "Final Confrontation",
   "terrain": "models/terrain/terrain.obj",
   "missionType": "destroy_all",
-  "playerSpawn": [0.0, 0.0, 100.0],
+  "playerSpawn": [
+    0,
+    -6000,
+    500
+  ],
   "enemies": [
     {
       "type": "light_turret",
-      "position": [-256.03, 236.84, 8.71]
+      "position": [
+        6000,
+        6000,
+        50
+      ]
     },
     {
       "type": "heavy_turret",
-      "position": [-94.62, -374.55, 8.71]
+      "position": [
+        -6000,
+        -6000,
+        50
+      ]
     },
     {
       "type": "fighter",
-      "position": [262.17, 86.17, 219.06]
+      "position": [
+        -5000,
+        5000,
+        3000
+      ]
     },
     {
       "type": "bomber",
-      "position": [-38.25, 331.75, 350.19]
+      "position": [
+        5000,
+        -5000,
+        3500
+      ]
     },
     {
       "type": "interceptor",
-      "position": [-384.89, -114.42, 453.39]
+      "position": [
+        0,
+        0,
+        2000
+      ]
     }
   ]
 }

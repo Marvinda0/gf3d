@@ -2,31 +2,27 @@
   "name": "Airfield Assault",
   "terrain": "models/terrain/terrain.obj",
   "missionType": "destroy_all",
-  "playerSpawn": [0.0, -500.0, 100.0],
+  "playerSpawn": [0.0, -6000.0, 500.0],
   "enemies": [
     {
       "type": "light_turret",
-      "position": [100.0, 200.0, 10.0]
-    },
-    {
-      "type": "light_turret",
-      "position": [-100.0, 200.0, 10.0]
+      "position": [-1000.0, 4000.0, 50.0]
     },
     {
       "type": "heavy_turret",
-      "position": [0.0, 300.0, 10.0]
+      "position": [1000.0, 4000.0, 50.0]
     },
     {
       "type": "fighter",
-      "position": [200.0, 0.0, 200.0]
-    },
-    {
-      "type": "fighter",
-      "position": [-200.0, 0.0, 200.0]
+      "position": [0.0, 2000.0, 1500.0]
     },
     {
       "type": "bomber",
-      "position": [0.0, 400.0, 300.0]
+      "position": [0.0, 5000.0, 3000.0]
+    },
+    {
+      "type": "interceptor",
+      "position": [0.0, 1000.0, 1000.0]
     }
   ]
 }

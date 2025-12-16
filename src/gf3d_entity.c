@@ -146,15 +146,15 @@ void entity_update_all() {
 
 Uint8 entity_get_floor_position(Entity* self, World* world, GFC_Vector3D* contact) {
 	if (!self || !world || !contact) return 0;
+
 	GFC_Vector3D start = self->position;
 	GFC_Vector3D end = self->position;
 
-	start.z += 3.0f;
-	end.z -= 50000.0f;
+	start.z += 2000.0f;
+	end.z -= 2000.f;
 
-	if (world_edge_test(world, start, end, contact)) {
-		contact->z += 4.9f;
-		return 1;
+	if (world_edge_test(world, start, end, contact, 1)) {
+		return 1;  // Remove the += 4.9f - it's messing things up
 	}
 	return 0;
 }
